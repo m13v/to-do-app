@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Task Manager
 
-## Getting Started
+A Next.js application that displays a task list from a markdown file with AI-powered editing capabilities.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Editable Table**: Click on any cell to edit tasks or categories directly
+- **AI Assistant**: Use natural language to modify your tasks via Gemini AI
+- **Real-time Updates**: Changes are saved to the markdown file automatically
+- **Clean UI**: Hover effects show action buttons only when needed
+- **Keyboard Shortcuts**: 
+  - Press `Enter` to save edits
+  - Press `Escape` to cancel editing
+  - Press `Cmd+Enter` in the AI prompt to submit
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Configure Gemini API**:
+   - Edit `.env.local` and add your Gemini API key:
+   ```
+   GEMINI_API_KEY=your_actual_gemini_api_key_here
+   ```
 
-## Learn More
+3. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Open the app**:
+   - Navigate to [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Usage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Editing Tasks Manually
+- Click on any category or task cell to edit it
+- Type your changes
+- Press `Enter` to save or `Escape` to cancel
 
-## Deploy on Vercel
+### Adding/Removing Tasks
+- Hover over any row to see action buttons
+- Click the `+` button to add a new task below
+- Click the trash icon to delete a task
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Using AI Assistant
+- Type a natural language command in the prompt box at the top
+- Examples:
+  - "Add a new task for code review in the BUSINESS category"
+  - "Change all DASHBOARD tasks to UI category"
+  - "Remove all tasks related to legal"
+  - "Organize tasks by alphabetical order"
+- Click "Apply" or press `Cmd+Enter` to execute
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## File Structure
+
+- `/app/page.tsx` - Main UI component
+- `/app/api/gemini/route.ts` - Gemini AI API endpoint
+- `/app/api/file/route.ts` - File read/write API endpoint
+- `/lib/markdown-parser.ts` - Markdown parsing utilities
+- `/public/task_categories_table.md` - The task data file
+
+## Notes
+
+- The app reads and writes directly to the markdown file in the public directory
+- All changes are logged to the console for debugging
+- The AI uses the `gemini-2.5-pro-preview-06-05` model as specified
