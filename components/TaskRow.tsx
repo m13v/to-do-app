@@ -54,7 +54,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   const handleBlur = (field: keyof Omit<Task, 'id'>) => {
     debouncedUpdate.flush();
     if (editedTask[field] !== task[field]) {
-      handleTaskUpdate(task.id, field, editedTask[field]);
+      handleTaskUpdate(task.id, field, String(editedTask[field]));
     }
   };
 
