@@ -20,7 +20,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { useUser, UserButton, SignedIn } from '@clerk/nextjs';
 
 type SortField = 'id' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
@@ -38,23 +38,17 @@ export default function Home() {
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  const saveTasks = useCallback(async (updatedTasks: Task[]): Promise<boolean> => {
+  const saveTasks = useCallback(async (updatedTasks: Task[]) => {
     setSaving(true);
     try {
       const markdown = tasksToMarkdown(updatedTasks);
-      const response = await fetch('/api/tasks', {
+      await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: markdown }),
       });
-      if (!response.ok) {
-        console.error('Failed to save tasks to server');
-        return false;
-      }
-      return true;
     } catch (error) {
       console.error('Error saving tasks:', error);
-      return false;
     } finally {
       setSaving(false);
     }
@@ -70,13 +64,9 @@ export default function Home() {
         console.log('Found local tasks, migrating to Supabase...');
         const parsedTasks = parseMarkdownTable(storedMarkdown);
         setTasks(parsedTasks);
-        const migrationSuccessful = await saveTasks(parsedTasks);
-        if (migrationSuccessful) {
-          localStorage.removeItem('markdownContent'); // Migration done
-          console.log('Migration complete.');
-        } else {
-          console.error('Migration failed. Tasks remain in localStorage.');
-        }
+        await saveTasks(parsedTasks);
+        localStorage.removeItem('markdownContent'); // Migration done
+        console.log('Migration complete.');
         setLoading(false);
         return;
       }
@@ -463,15 +453,6 @@ Your response will be parsed by the application, so it's critical to maintain th
             </>
           )}
         </SignedIn>
-        <SignedOut>
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <h2 className="text-2xl font-semibold mb-4">Welcome to Your Task Manager</h2>
-            <p className="mb-8 text-gray-600">Please sign in to manage your tasks.</p>
-            <SignInButton mode="modal">
-              <Button>Sign In</Button>
-            </SignInButton>
-          </div>
-        </SignedOut>
       </main>
 
       <footer className="p-4 border-t text-center text-sm text-gray-500">

@@ -16,7 +16,7 @@ export async function GET() {
     }
 
     const { data, error } = await supabase
-      .from('todoapp_tasks')
+      .from('tasks')
       .select('content')
       .eq('user_id', userId)
       .single();
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const { content } = await request.json();
 
     const { data, error } = await supabase
-      .from('todoapp_tasks')
+      .from('tasks')
       .select('id')
       .eq('user_id', userId)
       .single();
@@ -55,14 +55,14 @@ export async function POST(request: Request) {
     if (data) {
       // Update existing record
       const { error: updateError } = await supabase
-        .from('todoapp_tasks')
+        .from('tasks')
         .update({ content: content, updated_at: new Date().toISOString() })
         .eq('user_id', userId);
       if (updateError) throw updateError;
     } else {
       // Insert new record
       const { error: insertError } = await supabase
-        .from('todoapp_tasks')
+        .from('tasks')
         .insert({ user_id: userId, content: content });
       if (insertError) throw insertError;
     }

@@ -38,23 +38,17 @@ export default function Home() {
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  const saveTasks = useCallback(async (updatedTasks: Task[]): Promise<boolean> => {
+  const saveTasks = useCallback(async (updatedTasks: Task[]) => {
     setSaving(true);
     try {
       const markdown = tasksToMarkdown(updatedTasks);
-      const response = await fetch('/api/tasks', {
+      await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: markdown }),
       });
-      if (!response.ok) {
-        console.error('Failed to save tasks to server');
-        return false;
-      }
-      return true;
     } catch (error) {
       console.error('Error saving tasks:', error);
-      return false;
     } finally {
       setSaving(false);
     }
@@ -70,13 +64,9 @@ export default function Home() {
         console.log('Found local tasks, migrating to Supabase...');
         const parsedTasks = parseMarkdownTable(storedMarkdown);
         setTasks(parsedTasks);
-        const migrationSuccessful = await saveTasks(parsedTasks);
-        if (migrationSuccessful) {
-          localStorage.removeItem('markdownContent'); // Migration done
-          console.log('Migration complete.');
-        } else {
-          console.error('Migration failed. Tasks remain in localStorage.');
-        }
+        await saveTasks(parsedTasks);
+        localStorage.removeItem('markdownContent'); // Migration done
+        console.log('Migration complete.');
         setLoading(false);
         return;
       }
