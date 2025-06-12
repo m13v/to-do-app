@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface TaskRowProps {
   task: Task;
@@ -124,6 +125,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
               onBlur={() => handleBlur('task')}
               className="min-h-[28px] py-0.5 resize-none"
               rows={1}
+            />
+          </TableCell>
+          <TableCell className="py-1 px-1 text-center">
+            <Checkbox
+              checked={!!editedTask.today}
+              onCheckedChange={checked => {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('Today checkbox changed:', checked, editedTask.id);
+                }
+                handleChange('today', checked ? 'true' : '');
+              }}
+              aria-label="Mark as today"
             />
           </TableCell>
           <TableCell className="py-1 px-1 text-right">

@@ -5,6 +5,7 @@ export interface Task {
   status: string;
   effort: string;
   criticality: string;
+  today?: boolean;
 }
 
 export function parseMarkdownTable(markdown: string): Task[] {
@@ -15,12 +16,16 @@ export function parseMarkdownTable(markdown: string): Task[] {
   const tasks: Task[] = [];
   
   let hasDoneColumn = false;
+  let hasTodayColumn = false;
   let inTable = false;
 
   for (const line of lines) {
     if (line.includes('| Category | Task | Status |')) {
       if (line.includes('| Done |')) {
         hasDoneColumn = true;
+      }
+      if (line.includes('| Today |')) {
+        hasTodayColumn = true;
       }
       inTable = true;
       continue;
@@ -40,6 +45,7 @@ export function parseMarkdownTable(markdown: string): Task[] {
             status: parts[3],
             effort: parts[5],
             criticality: parts[6],
+            today: parts[7].toLowerCase() === 'yes',
           });
         } else if (parts.length >= 7) { // Cat|Task|Status|Done|Effort
           tasks.push({
@@ -49,6 +55,7 @@ export function parseMarkdownTable(markdown: string): Task[] {
             status: parts[3],
             effort: parts[5],
             criticality: '',
+            today: false,
           });
         } else if (parts.length >= 6) { // Cat|Task|Status|Done
           tasks.push({
@@ -58,19 +65,36 @@ export function parseMarkdownTable(markdown: string): Task[] {
             status: parts[3],
             effort: '',
             criticality: '',
+            today: false,
           });
         }
       } else {
-        // New format without Done column
-        if (parts.length >= 7) { // Cat|Task|Status|Effort|Crit
-           tasks.push({
-            id: `${Date.now()}-${Math.random()}`,
-            category: parts[1],
-            task: parts[2],
-            status: parts[3],
-            effort: parts[4],
-            criticality: parts[5],
-          });
+        if (hasTodayColumn) {
+          // Cat|Task|Status|Effort|Crit|Today
+          if (parts.length >= 8) {
+            tasks.push({
+              id: `${Date.now()}-${Math.random()}`,
+              category: parts[1],
+              task: parts[2],
+              status: parts[3],
+              effort: parts[4],
+              criticality: parts[5],
+              today: parts[6].toLowerCase() === 'yes',
+            });
+          }
+        } else {
+          // New format without Done column
+          if (parts.length >= 7) { // Cat|Task|Status|Effort|Crit
+             tasks.push({
+              id: `${Date.now()}-${Math.random()}`,
+              category: parts[1],
+              task: parts[2],
+              status: parts[3],
+              effort: parts[4],
+              criticality: parts[5],
+              today: false,
+            });
+          }
         }
       }
     }
@@ -87,11 +111,11 @@ export function tasksToMarkdown(tasks: Task[]): string {
     console.log('Converting tasks to markdown, count:', tasks.length);
   }
   let markdown = '# Task Categories Table\n\n';
-  markdown += '| Category | Task | Status | Effort | Criticality |\n';
-  markdown += '|----------|------|--------|--------|-------------|\n';
+  markdown += '| Category | Task | Status | Effort | Criticality | Today |\n';
+  markdown += '|----------|------|--------|--------|-------------|-------|\n';
   
   for (const task of tasks) {
-    markdown += `| ${task.category} | ${task.task} | ${task.status} | ${task.effort} | ${task.criticality} |\n`;
+    markdown += `| ${task.category} | ${task.task} | ${task.status} | ${task.effort} | ${task.criticality} | ${task.today ? 'yes' : ''} |\n`;
   }
   
   return markdown;

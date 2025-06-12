@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table';
 import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task, migrateTasksWithEffort, migrateTasksWithCriticality } from '@/lib/markdown-parser';
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type SortField = 'id' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
@@ -349,6 +350,9 @@ Your response will be parsed by the application, so it's critical to maintain th
     return sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   }, [sortField, sortDirection]);
 
+  // Filter for today tasks
+  const todayTasks = useMemo(() => tasks.filter(t => t.today), [tasks]);
+
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b">
@@ -429,6 +433,53 @@ Your response will be parsed by the application, so it's critical to maintain th
                 </div>
               </div>
 
+              {/* Today Tasks Section */}
+              {todayTasks.length > 0 && (
+                <Card className="mb-6 border-2 border-primary">
+                  <CardHeader className="py-2 bg-primary/10">
+                    <CardTitle className="text-sm">Today&apos;s Tasks ({todayTasks.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2">
+                    <div className="overflow-x-auto">
+                      <Table className="table-fixed w-full">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[25px] px-1"></TableHead>
+                            <TableHead className="w-[40px] px-1">#</TableHead>
+                            <TableHead className="w-[150px] px-1">Category</TableHead>
+                            <TableHead className="w-[120px] px-1">Status</TableHead>
+                            <TableHead className="w-[40px] px-1">E</TableHead>
+                            <TableHead className="w-[40px] px-1">C</TableHead>
+                            <TableHead className="w-auto px-1">Task</TableHead>
+                            <TableHead className="w-[60px] px-1">Today</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {todayTasks.map((task, idx) => (
+                            <TableRow key={task.id}>
+                              <TableCell></TableCell>
+                              <TableCell>{idx + 1}</TableCell>
+                              <TableCell>{task.category}</TableCell>
+                              <TableCell>{task.status}</TableCell>
+                              <TableCell>{task.effort}</TableCell>
+                              <TableCell>{task.criticality}</TableCell>
+                              <TableCell>{task.task}</TableCell>
+                              <TableCell>
+                                <Checkbox
+                                  checked={!!task.today}
+                                  onCheckedChange={checked => handleTaskUpdate(task.id, 'today', checked ? 'true' : '')}
+                                  aria-label="Mark as today"
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card>
                 <CardHeader className="py-2">
                   <CardTitle className="text-sm">Task Categories ({filteredTasks.length} tasks)</CardTitle>
@@ -440,29 +491,18 @@ Your response will be parsed by the application, so it's critical to maintain th
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-[25px] px-1"></TableHead>
-                            <TableHead 
-                              className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                              onClick={() => handleSort('id')}
-                            >
+                            <TableHead className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('id')}>
                               <div className="flex items-center gap-1">
                                 # {getSortIcon('id')}
                               </div>
                             </TableHead>
-                            <TableHead 
-                              className="w-[150px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                              onClick={() => handleSort('category')}
-                            >
+                            <TableHead className="w-[150px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
                               <div className="flex items-center gap-1">
                                 Category {getSortIcon('category')}
                               </div>
                             </TableHead>
-                            <TableHead className="w-[120px] px-1">
-                              Status
-                            </TableHead>
-                            <TableHead 
-                              className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                              onClick={() => handleSort('effort')}
-                            >
+                            <TableHead className="w-[120px] px-1">Status</TableHead>
+                            <TableHead className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -474,10 +514,7 @@ Your response will be parsed by the application, so it's critical to maintain th
                                 </Tooltip>
                               </TooltipProvider>
                             </TableHead>
-                            <TableHead 
-                              className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                              onClick={() => handleSort('criticality')}
-                            >
+                            <TableHead className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -489,14 +526,12 @@ Your response will be parsed by the application, so it's critical to maintain th
                                 </Tooltip>
                               </TooltipProvider>
                             </TableHead>
-                            <TableHead 
-                              className="w-auto px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                              onClick={() => handleSort('task')}
-                            >
+                            <TableHead className="w-auto px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
                               <div className="flex items-center gap-1">
                                 Task {getSortIcon('task')}
                               </div>
                             </TableHead>
+                            <TableHead className="w-[60px] px-1">Today</TableHead>
                             <TableHead className="w-[100px] px-1 text-right" title="Actions">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
