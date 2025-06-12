@@ -45,7 +45,7 @@ export async function GET() {
       let errorData;
       try {
         errorData = JSON.parse(responseText);
-      } catch {
+      } catch (_) {
         errorData = { message: responseText };
       }
       
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
       let errorData;
       try {
         errorData = JSON.parse(responseText);
-      } catch {
+      } catch (_) {
         errorData = { message: responseText };
       }
       

@@ -34,20 +34,9 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      const responseText = await response.text();
-      console.error('Supabase REST error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        body: responseText
-      });
-      
-      let errorData;
-      try {
-        errorData = JSON.parse(responseText);
-      } catch {
-        errorData = { message: responseText };
-      }
+      const errorData = {
+        message: await response.text()
+      };
       
       throw new Error(JSON.stringify(errorData));
     }
@@ -96,20 +85,9 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      const responseText = await response.text();
-      console.error('Supabase REST error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        body: responseText
-      });
-      
-      let errorData;
-      try {
-        errorData = JSON.parse(responseText);
-      } catch {
-        errorData = { message: responseText };
-      }
+      const errorData = {
+        message: await response.text()
+      };
       
       throw new Error(JSON.stringify(errorData));
     }

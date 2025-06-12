@@ -164,12 +164,12 @@ export default function Home() {
   }, [user, loadTasks]);
 
   useEffect(() => {
-    if (loading || !user || syncError) return;
+    if (loading || !user) return;
     const handler = setTimeout(() => {
       saveTasks(tasks);
     }, 5000);
     return () => clearTimeout(handler);
-  }, [tasks, loading, user, saveTasks, syncError]);
+  }, [tasks, loading, user, saveTasks]);
 
   const handleAIPrompt = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();

@@ -28,7 +28,9 @@ export async function GET() {
 
     const response = await fetch(`${supabaseUrl}/rest/v1/todoapp_tasks?user_id=eq.${userId}&select=content`, {
       headers: {
-        ...customHeaders,
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+        'user-id': userId,
         'apikey-prefer-project-ref': 'eshwntsgsputksqamckh'
       }
     });
@@ -45,7 +47,7 @@ export async function GET() {
       let errorData;
       try {
         errorData = JSON.parse(responseText);
-      } catch {
+      } catch (_) {
         errorData = { message: responseText };
       }
       
@@ -83,9 +85,10 @@ export async function POST(request: Request) {
     const response = await fetch(`${supabaseUrl}/rest/v1/todoapp_tasks`, {
       method: 'POST',
       headers: {
-        ...customHeaders,
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates',
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+        'user-id': userId,
         'apikey-prefer-project-ref': 'eshwntsgsputksqamckh'
       },
       body: JSON.stringify({
@@ -107,7 +110,7 @@ export async function POST(request: Request) {
       let errorData;
       try {
         errorData = JSON.parse(responseText);
-      } catch {
+      } catch (_) {
         errorData = { message: responseText };
       }
       

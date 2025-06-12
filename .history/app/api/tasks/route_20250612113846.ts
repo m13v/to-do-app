@@ -27,10 +27,7 @@ export async function GET() {
     console.log('With headers:', { ...customHeaders, 'user-id': userId });
 
     const response = await fetch(`${supabaseUrl}/rest/v1/todoapp_tasks?user_id=eq.${userId}&select=content`, {
-      headers: {
-        ...customHeaders,
-        'apikey-prefer-project-ref': 'eshwntsgsputksqamckh'
-      }
+      headers: customHeaders
     });
 
     if (!response.ok) {
@@ -45,7 +42,7 @@ export async function GET() {
       let errorData;
       try {
         errorData = JSON.parse(responseText);
-      } catch {
+      } catch (e) {
         errorData = { message: responseText };
       }
       
@@ -85,8 +82,7 @@ export async function POST(request: Request) {
       headers: {
         ...customHeaders,
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates',
-        'apikey-prefer-project-ref': 'eshwntsgsputksqamckh'
+        'Prefer': 'resolution=merge-duplicates'
       },
       body: JSON.stringify({
         user_id: userId,
@@ -107,7 +103,7 @@ export async function POST(request: Request) {
       let errorData;
       try {
         errorData = JSON.parse(responseText);
-      } catch {
+      } catch (e) {
         errorData = { message: responseText };
       }
       

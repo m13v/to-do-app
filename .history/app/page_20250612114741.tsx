@@ -52,7 +52,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [syncError, setSyncError] = useState(false);
 
   const saveTasks = useCallback(async (updatedTasks: Task[]): Promise<boolean> => {
     setSaving(true);
@@ -68,29 +67,17 @@ export default function Home() {
         body: JSON.stringify({ content: markdown }),
       });
       if (!response.ok) {
-        setSyncError(true);
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Failed to save tasks to server, but tasks are saved in localStorage');
-        }
+        console.error('Failed to save tasks to server, but tasks are saved in localStorage');
         return true; // Return true since we saved to localStorage
       }
-      setSyncError(false);
       return true;
     } catch (error) {
-      setSyncError(true);
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error saving tasks to server, but tasks are saved in localStorage:', error);
-      }
+      console.error('Error saving tasks to server, but tasks are saved in localStorage:', error);
       return true; // Return true since we saved to localStorage
     } finally {
       setSaving(false);
     }
   }, []);
-
-  const retrySync = useCallback(async () => {
-    setSyncError(false);
-    await saveTasks(tasks);
-  }, [tasks, saveTasks]);
 
   const loadTasks = useCallback(async () => {
     if (!user) return;
@@ -164,12 +151,12 @@ export default function Home() {
   }, [user, loadTasks]);
 
   useEffect(() => {
-    if (loading || !user || syncError) return;
+    if (loading || !user) return;
     const handler = setTimeout(() => {
       saveTasks(tasks);
     }, 5000);
     return () => clearTimeout(handler);
-  }, [tasks, loading, user, saveTasks, syncError]);
+  }, [tasks, loading, user, saveTasks]);
 
   const handleAIPrompt = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,12 +350,6 @@ Your response will be parsed by the application, so it's critical to maintain th
             </div>
           ) : (
             <>
-              {syncError && (
-                <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-2 text-center">
-                  Could not sync with server. Your tasks are safe locally.
-                  <button onClick={retrySync} className="ml-2 underline text-red-700">Retry</button>
-                </div>
-              )}
               <Card className="mb-3">
                 <CardHeader className="py-2">
                   <CardTitle className="flex items-center justify-between">
