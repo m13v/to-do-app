@@ -25,6 +25,21 @@ import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/n
 type SortField = 'id' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
 
+const defaultTasksMarkdown = `# Task Categories Table
+| Category | Task | Status | Done | Effort | Criticality |
+|---|---|---|---|---|---|
+| Welcome | Welcome to your new task manager! | to_do | | 5 | 2 |
+| Welcome | Click on any task text to edit it. | to_do | | 1 | 1 |
+| Welcome | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | | 1 | 1 |
+| Welcome | Drag and drop tasks to reorder them. | to_do | | 2 | 1 |
+| Welcome | Use the search bar to filter your tasks. | to_do | | 1 | 1 |
+| Welcome | Click on the column headers to sort your list. | to_do | | 1 | 1 |
+| Welcome | Set effort from 1-10 to estimate task size. | to_do | | 1 | 2 |
+| Welcome | Set criticality from 1-3 to prioritize important work. | to_do | | 1 | 2 |
+| Welcome | Use the AI Assistant to manage your tasks with natural language. | to_do | | 3 | 3 |
+| Welcome | Delete these welcome tasks when you're ready to start. | to_do | | 1 | 1 |
+`;
+
 export default function Home() {
   const { user } = useUser();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -90,8 +105,12 @@ export default function Home() {
         const fullyMigratedTasks = migrateTasksWithCriticality(migratedTasks);
         setTasks(fullyMigratedTasks);
       } else {
-        // No tasks in Supabase for this user, start with an empty list.
-        setTasks([]);
+        // No tasks in Supabase for this user, start with a default list.
+        console.log('No tasks found for new user, loading defaults.');
+        const parsedDefaultTasks = parseMarkdownTable(defaultTasksMarkdown);
+        setTasks(parsedDefaultTasks);
+        // Save the default tasks to their new account
+        await saveTasks(parsedDefaultTasks);
       }
     } catch (error) {
       console.error('Error loading tasks:', error);
