@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { GripVertical, Plus, Copy, X } from 'lucide-react';
+import { GripVertical, Plus, Copy, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
   Select,
@@ -15,23 +15,32 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 interface TaskRowProps {
   task: Task;
   index: number;
+  isFirst: boolean;
+  isLast: boolean;
   handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => void;
   handleAddTask: (id: string) => void;
   handleDuplicateTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
+  handleMoveTaskUp: (id: string) => void;
+  handleMoveTaskDown: (id: string) => void;
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({
   task,
   index,
+  isFirst,
+  isLast,
   handleTaskUpdate,
   handleAddTask,
   handleDuplicateTask,
   handleDeleteTask,
+  handleMoveTaskUp,
+  handleMoveTaskDown,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
 
@@ -64,7 +73,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
         <TableRow
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className="group"
+          className={cn(
+            "group",
+            task.status === 'done' && "text-muted-foreground line-through"
+          )}
         >
           <TableCell {...provided.dragHandleProps} className="cursor-grab px-1">
             <GripVertical className="h-4 w-4" />
@@ -141,6 +153,26 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
           <TableCell className="py-1 px-1 text-right">
             <div className="flex items-center justify-end gap-0.5">
+              <Button
+                onClick={() => handleMoveTaskUp(task.id)}
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                title="Move up"
+                disabled={isFirst}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={() => handleMoveTaskDown(task.id)}
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                title="Move down"
+                disabled={isLast}
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
               <Button
                 onClick={() => handleAddTask(task.id)}
                 size="sm"

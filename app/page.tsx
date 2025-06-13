@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table';
-import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
+import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
-import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task, migrateTasksWithEffort, migrateTasksWithCriticality } from '@/lib/markdown-parser';
+import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task } from '@/lib/markdown-parser';
 import TaskRow from '@/components/TaskRow';
 import QuickPrompts from '@/components/QuickPrompts';
 import {
@@ -43,7 +43,9 @@ const defaultTasksMarkdown = `# Task Categories Table
 
 export default function Home() {
   const { user } = useUser();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [activeTasks, setActiveTasks] = useState<Task[]>([]);
+  const [doneTasks, setDoneTasks] = useState<Task[]>([]);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [prompt, setPrompt] = useState('');
@@ -55,11 +57,13 @@ export default function Home() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
 
-  const saveTasks = useCallback(async (updatedTasks: Task[]): Promise<boolean> => {
+  const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
+
+  const saveTasks = useCallback(async (tasksToSave: Task[]): Promise<boolean> => {
     setSaving(true);
     try {
       // Always save to localStorage first
-      const markdown = tasksToMarkdown(updatedTasks);
+      const markdown = tasksToMarkdown(tasksToSave);
       localStorage.setItem('markdownContent', markdown);
 
       // Then try to save to Supabase
@@ -90,73 +94,38 @@ export default function Home() {
 
   const retrySync = useCallback(async () => {
     setSyncError(false);
-    await saveTasks(tasks);
-  }, [tasks, saveTasks]);
+    await saveTasks(allTasks);
+  }, [allTasks, saveTasks]);
 
   const loadTasks = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    let tasksToLoad: Task[] = [];
     try {
-      // Always check localStorage first
       const storedMarkdown = localStorage.getItem('markdownContent');
-      let localTasks = null;
       if (storedMarkdown) {
-        console.log('Found tasks in localStorage');
-        localTasks = parseMarkdownTable(storedMarkdown);
-      }
-
-      // Try to load from Supabase
-      try {
+        tasksToLoad = parseMarkdownTable(storedMarkdown);
+      } else {
         const response = await fetch('/api/tasks');
-        const data = await response.json();
-
-        if (data && data.content) {
-          const parsedTasks = parseMarkdownTable(data.content);
-          const migratedTasks = migrateTasksWithEffort(parsedTasks);
-          const fullyMigratedTasks = migrateTasksWithCriticality(migratedTasks);
-          
-          // If we have newer tasks in localStorage, use those instead
-          if (localTasks) {
-            console.log('Using localStorage tasks as they exist');
-            setTasks(localTasks);
-          } else {
-            console.log('Using server tasks');
-            setTasks(fullyMigratedTasks);
-            // Backup server tasks to localStorage
-            localStorage.setItem('markdownContent', tasksToMarkdown(fullyMigratedTasks));
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.content) {
+            tasksToLoad = parseMarkdownTable(data.content);
           }
-        } else if (localTasks) {
-          // No tasks in Supabase but we have local tasks
-          console.log('No server tasks found, using localStorage tasks');
-          setTasks(localTasks);
-          await saveTasks(localTasks); // Try to save local tasks to server
-        } else {
-          // No tasks anywhere, start with defaults
-          console.log('No tasks found anywhere, loading defaults');
-          const parsedDefaultTasks = parseMarkdownTable(defaultTasksMarkdown);
-          setTasks(parsedDefaultTasks);
-          await saveTasks(parsedDefaultTasks);
         }
-      } catch (error) {
-        console.error('Error loading tasks from server, falling back to localStorage:', error);
-        if (localTasks) {
-          // Server error but we have local tasks
-          console.log('Using localStorage tasks due to server error');
-          setTasks(localTasks);
-        } else {
-          // Server error and no local tasks, use defaults
-          console.log('No localStorage tasks found, loading defaults');
-          const parsedDefaultTasks = parseMarkdownTable(defaultTasksMarkdown);
-          setTasks(parsedDefaultTasks);
-          await saveTasks(parsedDefaultTasks);
-        }
+      }
+      if (tasksToLoad.length === 0) {
+        tasksToLoad = parseMarkdownTable(defaultTasksMarkdown);
       }
     } catch (error) {
-      console.error('Error in loadTasks:', error);
+      console.error("Failed to load tasks, using defaults:", error);
+      tasksToLoad = parseMarkdownTable(defaultTasksMarkdown);
     } finally {
+      setActiveTasks(tasksToLoad.filter(t => t.status !== 'done'));
+      setDoneTasks(tasksToLoad.filter(t => t.status === 'done'));
       setLoading(false);
     }
-  }, [user, saveTasks]);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -167,18 +136,17 @@ export default function Home() {
   useEffect(() => {
     if (loading || !user || syncError) return;
     const handler = setTimeout(() => {
-      // This is now just a periodic backup, not the primary save mechanism.
-      saveTasks(tasks);
-    }, 10000); // Increased to 10 seconds for safety backup
+      saveTasks(allTasks);
+    }, 10000);
     return () => clearTimeout(handler);
-  }, [tasks, loading, user, saveTasks, syncError]);
+  }, [allTasks, loading, user, saveTasks, syncError]);
 
   const handleAIPrompt = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
     setProcessingAI(true);
-    setLastGoodState(tasks);
+    setLastGoodState(allTasks);
 
     const systemPrompt = `You are an AI assistant helping to manage a todo list in a markdown file. The file content is a markdown table.
 The table has the following columns: | Category | Task | Status | Done | Effort | Criticality |
@@ -196,7 +164,7 @@ Your response will be parsed by the application, so it's critical to maintain th
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemPrompt,
-          userPrompt: `${prompt}\n\n${tasksToMarkdown(tasks)}`,
+          userPrompt: `${prompt}\n\n${tasksToMarkdown(allTasks)}`,
         }),
       });
 
@@ -218,12 +186,13 @@ Your response will be parsed by the application, so it's critical to maintain th
     } finally {
       setProcessingAI(false);
     }
-  }, [prompt, tasks]);
+  }, [prompt, allTasks]);
 
   const handleConfirmAIChanges = () => {
     if (aiGeneratedContent) {
       const parsedTasks = parseMarkdownTable(aiGeneratedContent);
-      setTasks(parsedTasks);
+      setActiveTasks(parsedTasks.filter(t => t.status !== 'done'));
+      setDoneTasks(parsedTasks.filter(t => t.status === 'done'));
       saveTasks(parsedTasks);
       setAiGeneratedContent(null);
     }
@@ -235,7 +204,8 @@ Your response will be parsed by the application, so it's critical to maintain th
   
   const handleRevert = () => {
     if (lastGoodState) {
-      setTasks(lastGoodState);
+      setActiveTasks(lastGoodState.filter(t => t.status !== 'done'));
+      setDoneTasks(lastGoodState.filter(t => t.status === 'done'));
       saveTasks(lastGoodState);
       setLastGoodState(null);
     }
@@ -246,20 +216,20 @@ Your response will be parsed by the application, so it's critical to maintain th
       return;
     }
 
-    const newTasks = Array.from(tasks);
-    const movedItem = sortedTasks.find((t, i) => i === result.source.index);
+    const newTasks = Array.from(activeTasks);
+    const movedItem = sortedActiveTasks.find((t, i) => i === result.source.index);
     if (!movedItem) return;
 
     const sourceIndex = newTasks.findIndex(t => t.id === movedItem.id);
     newTasks.splice(sourceIndex, 1);
 
-    const destinationItem = sortedTasks.find((t, i) => i === result.destination!.index);
+    const destinationItem = sortedActiveTasks.find((t, i) => i === result.destination!.index);
     const destinationIndex = destinationItem ? newTasks.findIndex(t => t.id === destinationItem.id) : newTasks.length;
     
     newTasks.splice(destinationIndex, 0, movedItem);
 
-    setTasks(newTasks);
-    saveTasks(newTasks);
+    setActiveTasks(newTasks);
+    saveTasks([...newTasks, ...doneTasks]);
   };
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
@@ -268,41 +238,92 @@ Your response will be parsed by the application, so it's critical to maintain th
   }, [handleAIPrompt]);
 
   const handleTaskUpdate = useCallback((id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => {
-    const newTasks = tasks.map(task =>
-      task.id === id ? { ...task, [field]: value } : task
-    );
-    setTasks(newTasks);
-    saveTasks(newTasks);
-  }, [tasks, saveTasks]);
+    let taskToMove: Task | undefined;
+    const updatedActive = [...activeTasks];
+    const updatedDone = [...doneTasks];
+
+    const isStatusChangeToDone = field === 'status' && value === 'done';
+    const isStatusChangeFromDone = field === 'status' && value !== 'done';
+
+    const activeIndex = activeTasks.findIndex(t => t.id === id);
+    const doneIndex = doneTasks.findIndex(t => t.id === id);
+
+    if (isStatusChangeToDone && activeIndex !== -1) {
+      [taskToMove] = updatedActive.splice(activeIndex, 1);
+      if (taskToMove) {
+        taskToMove.status = 'done';
+        updatedDone.unshift(taskToMove);
+      }
+    } else if (isStatusChangeFromDone && doneIndex !== -1) {
+      [taskToMove] = updatedDone.splice(doneIndex, 1);
+      if (taskToMove) {
+        taskToMove.status = value as string;
+        updatedActive.push(taskToMove);
+      }
+    } else {
+      if (activeIndex !== -1) {
+        updatedActive[activeIndex] = { ...updatedActive[activeIndex], [field]: value };
+      } else if (doneIndex !== -1) {
+        updatedDone[doneIndex] = { ...updatedDone[doneIndex], [field]: value };
+      }
+    }
+    
+    setActiveTasks(updatedActive);
+    setDoneTasks(updatedDone);
+    saveTasks([...updatedActive, ...updatedDone]);
+  }, [activeTasks, doneTasks, saveTasks]);
   
   const handleAddTask = useCallback((afterId: string) => {
-    setTasks(currentTasks => {
-      const afterIndex = currentTasks.findIndex(t => t.id === afterId);
-      const category = currentTasks[afterIndex]?.category || 'NEW';
-      const newTask: Task = { id: `${Date.now()}-${Math.random()}`, category, task: '', status: 'to_do', effort: '5', criticality: '2' };
-      const newTasks = insertTaskAt(currentTasks, afterIndex + 1, newTask);
-      saveTasks(newTasks);
-      return newTasks;
-    });
-  }, [saveTasks]);
+    const newTasks = [...activeTasks];
+    const afterIndex = newTasks.findIndex(t => t.id === afterId);
+    const category = newTasks[afterIndex]?.category || 'NEW';
+    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, category, task: '', status: 'to_do', effort: '5', criticality: '2' };
+    const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
+    setActiveTasks(updatedTasks);
+    saveTasks([...updatedTasks, ...doneTasks]);
+  }, [activeTasks, doneTasks, saveTasks]);
 
   const handleDeleteTask = useCallback((id: string) => {
-    const newTasks = tasks.filter(task => task.id !== id);
-    setTasks(newTasks);
-    saveTasks(newTasks);
-  }, [tasks, saveTasks]);
+    const updatedActive = activeTasks.filter(t => t.id !== id);
+    const updatedDone = doneTasks.filter(t => t.id !== id);
+    setActiveTasks(updatedActive);
+    setDoneTasks(updatedDone);
+    saveTasks([...updatedActive, ...updatedDone]);
+  }, [activeTasks, doneTasks, saveTasks]);
 
   const handleDuplicateTask = useCallback((id: string) => {
-    let newTasks = [...tasks];
+    const newTasks = [...activeTasks];
     const taskToDuplicate = newTasks.find(t => t.id === id);
     if (taskToDuplicate) {
       const index = newTasks.findIndex(t => t.id === id);
       const duplicatedTask: Task = { ...taskToDuplicate, id: `${Date.now()}-${Math.random()}` };
-      newTasks = insertTaskAt(newTasks, index, duplicatedTask);
-      setTasks(newTasks);
-      saveTasks(newTasks);
+      const updatedTasks = insertTaskAt(newTasks, index + 1, duplicatedTask);
+      setActiveTasks(updatedTasks);
+      saveTasks([...updatedTasks, ...doneTasks]);
     }
-  }, [tasks, saveTasks]);
+  }, [activeTasks, doneTasks, saveTasks]);
+
+  const handleMoveTaskUp = useCallback((taskId: string) => {
+    const index = activeTasks.findIndex(t => t.id === taskId);
+    if (index > 0) {
+      const newTasks = [...activeTasks];
+      const [movedTask] = newTasks.splice(index, 1);
+      newTasks.splice(index - 1, 0, movedTask);
+      setActiveTasks(newTasks);
+      saveTasks([...newTasks, ...doneTasks]);
+    }
+  }, [activeTasks, doneTasks, saveTasks]);
+
+  const handleMoveTaskDown = useCallback((taskId: string) => {
+    const index = activeTasks.findIndex(t => t.id === taskId);
+    if (index < activeTasks.length - 1 && index !== -1) {
+      const newTasks = [...activeTasks];
+      const [movedTask] = newTasks.splice(index, 1);
+      newTasks.splice(index + 1, 0, movedTask);
+      setActiveTasks(newTasks);
+      saveTasks([...newTasks, ...doneTasks]);
+    }
+  }, [activeTasks, doneTasks, saveTasks]);
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
@@ -313,18 +334,18 @@ Your response will be parsed by the application, so it's critical to maintain th
     }
   }, [sortField, sortDirection]);
 
-  const filteredTasks = useMemo(() => tasks.filter(task => 
+  const filteredActiveTasks = useMemo(() => activeTasks.filter(task => 
     task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.task.toLowerCase().includes(searchQuery.toLowerCase())
-  ), [tasks, searchQuery]);
+  ), [activeTasks, searchQuery]);
 
-  const sortedTasks = useMemo(() => {
+  const sortedActiveTasks = useMemo(() => {
     if (sortField === 'id' && sortDirection === 'asc') {
-      return filteredTasks;
+      return filteredActiveTasks;
     }
     
-    const sortableTasks = [...filteredTasks];
-    const taskIndexMap = new Map(tasks.map((task, index) => [task.id, index]));
+    const sortableTasks = [...filteredActiveTasks];
+    const taskIndexMap = new Map(activeTasks.map((task, index) => [task.id, index]));
 
     sortableTasks.sort((a, b) => {
       let comparison = 0;
@@ -349,7 +370,7 @@ Your response will be parsed by the application, so it's critical to maintain th
     });
 
     return sortableTasks;
-  }, [filteredTasks, sortField, sortDirection, tasks]);
+  }, [filteredActiveTasks, sortField, sortDirection, activeTasks]);
 
 
   const getSortIcon = useCallback((field: SortField) => {
@@ -358,7 +379,7 @@ Your response will be parsed by the application, so it's critical to maintain th
   }, [sortField, sortDirection]);
 
   // Filter for today tasks
-  const todayTasks = useMemo(() => tasks.filter(t => t.today), [tasks]);
+  const todayTasks = useMemo(() => activeTasks.filter(t => t.today), [activeTasks]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -427,12 +448,12 @@ Your response will be parsed by the application, so it's critical to maintain th
                     className="pl-8 h-9"
                   />
                 </div>
-                <Button onClick={() => saveTasks(tasks)} variant="outline" size="sm" disabled={saving}>
+                <Button onClick={() => saveTasks(allTasks)} variant="outline" size="sm" disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
                 </Button>
                 <Button
                   onClick={() => {
-                    const markdown = tasksToMarkdown(tasks);
+                    const markdown = tasksToMarkdown(allTasks);
                     const blob = new Blob([markdown], { type: 'text/markdown' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -454,7 +475,7 @@ Your response will be parsed by the application, so it's critical to maintain th
                   </Button>
                 )}
                 <div className="text-sm text-gray-500">
-                  {filteredTasks.length} of {tasks.length} tasks
+                  {filteredActiveTasks.length} of {activeTasks.length} tasks
                 </div>
               </div>
 
@@ -507,7 +528,7 @@ Your response will be parsed by the application, so it's critical to maintain th
 
               <Card>
                 <CardHeader className="py-2">
-                  <CardTitle className="text-sm">Task Categories ({filteredTasks.length} tasks)</CardTitle>
+                  <CardTitle className="text-sm">Task Categories ({filteredActiveTasks.length} tasks)</CardTitle>
                 </CardHeader>
                 <CardContent className="py-2">
                   <div className="overflow-x-auto">
@@ -557,21 +578,25 @@ Your response will be parsed by the application, so it's critical to maintain th
                               </div>
                             </TableHead>
                             <TableHead className="w-[60px] px-1">Today</TableHead>
-                            <TableHead className="w-[100px] px-1 text-right" title="Actions">Actions</TableHead>
+                            <TableHead className="w-[140px] px-1 text-right" title="Actions">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <Droppable droppableId="tasks">
                           {(provided) => (
                             <TableBody ref={provided.innerRef} {...provided.droppableProps}>
-                              {sortedTasks.map((task, index) => (
+                              {sortedActiveTasks.map((task, index) => (
                                 <TaskRow
                                   key={task.id}
                                   task={task}
                                   index={index}
+                                  isFirst={index === 0}
+                                  isLast={index === sortedActiveTasks.length - 1}
                                   handleTaskUpdate={handleTaskUpdate}
                                   handleAddTask={() => handleAddTask(task.id)}
-                                  handleDuplicateTask={handleDuplicateTask}
-                                  handleDeleteTask={handleDeleteTask}
+                                  handleDuplicateTask={() => handleDuplicateTask(task.id)}
+                                  handleDeleteTask={() => handleDeleteTask(task.id)}
+                                  handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
+                                  handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
                                 />
                               ))}
                               {provided.placeholder}
@@ -583,6 +608,53 @@ Your response will be parsed by the application, so it's critical to maintain th
                   </div>
                 </CardContent>
               </Card>
+
+              {doneTasks.length > 0 && (
+                <div className="mt-6">
+                  <Card>
+                    <CardHeader className="py-2 cursor-pointer" onClick={() => setIsArchiveOpen(!isArchiveOpen)}>
+                      <CardTitle className="text-sm flex items-center">
+                        {isArchiveOpen ? <ChevronDown className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
+                        Archived Tasks ({doneTasks.length})
+                      </CardTitle>
+                    </CardHeader>
+                    {isArchiveOpen && (
+                      <CardContent className="py-2">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-[60px] px-1">Today</TableHead>
+                                <TableHead>Task</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="w-[100px] px-1 text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {doneTasks.map((task, index) => (
+                                <TaskRow
+                                  key={task.id}
+                                  task={task}
+                                  index={index}
+                                  isFirst={true} isLast={true} // Move buttons disabled
+                                  handleTaskUpdate={handleTaskUpdate}
+                                  handleDeleteTask={() => handleDeleteTask(task.id)}
+                                  // Pass dummy handlers for unused actions
+                                  handleAddTask={() => {}}
+                                  handleDuplicateTask={() => {}}
+                                  handleMoveTaskUp={() => {}}
+                                  handleMoveTaskDown={() => {}}
+                                />
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                </div>
+              )}
             </>
           )}
         </SignedIn>
@@ -620,7 +692,7 @@ Your response will be parsed by the application, so it's critical to maintain th
           <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
             <div>
               <h3 className="font-bold mb-2">Current</h3>
-              <pre className="text-xs p-2 bg-gray-100 rounded">{tasksToMarkdown(tasks)}</pre>
+              <pre className="text-xs p-2 bg-gray-100 rounded">{tasksToMarkdown(allTasks)}</pre>
             </div>
             <div>
               <h3 className="font-bold mb-2">Proposed</h3>
