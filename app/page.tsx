@@ -41,6 +41,17 @@ const defaultTasksMarkdown = `# Task Categories Table
 | Welcome | Delete these welcome tasks when you're ready to start. | to_do | | 1 | 1 |
 `;
 
+const systemPrompt = `You are an AI assistant helping to manage a todo list. The user will provide a markdown table and a prompt.
+Your task is to return a new, updated markdown table based on the user's prompt.
+
+**RULES:**
+1.  **ONLY** return the markdown table. Do not include any other text, titles, headers, or explanations.
+2.  The table structure is fixed. The columns are: | Category | Task | Status | Effort | Criticality | Today |
+3.  Do **NOT** add, remove, or rename any columns.
+4.  Preserve the pipe \`|\` separators and the markdown table format exactly.
+Your output will be parsed by a script, so any deviation from this format will break the application.
+`;
+
 export default function Home() {
   const { user } = useUser();
   const [activeTasks, setActiveTasks] = useState<Task[]>([]);
@@ -170,17 +181,6 @@ export default function Home() {
 
     setProcessingAI(true);
     setLastGoodState(allTasks);
-
-    const systemPrompt = `You are an AI assistant helping to manage a todo list. The user will provide a markdown table and a prompt.
-Your task is to return a new, updated markdown table based on the user's prompt.
-
-**RULES:**
-1.  **ONLY** return the markdown table. Do not include any other text, titles, headers, or explanations.
-2.  The table structure is fixed. The columns are: | Category | Task | Status | Effort | Criticality | Today |
-3.  Do **NOT** add, remove, or rename any columns.
-4.  Preserve the pipe `|` separators and the markdown table format exactly.
-Your output will be parsed by a script, so any deviation from this format will break the application.
-`;
 
     try {
       const response = await fetch('/api/ai', {

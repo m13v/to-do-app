@@ -24,7 +24,8 @@ const safetySettings: Array<{category: HarmCategory, threshold: HarmBlockThresho
 
 export async function POST(request: NextRequest) {
   try {
-    const { systemPrompt, userPrompt } = await request.json();
+    const body = await request.json();
+    const { systemPrompt, userPrompt } = body;
     
     if (!systemPrompt || !userPrompt) {
       return NextResponse.json({ error: 'Both systemPrompt and userPrompt are required.' }, { status: 400 });
