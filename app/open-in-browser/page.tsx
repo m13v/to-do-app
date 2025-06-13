@@ -32,9 +32,9 @@ export default function OpenInBrowser() {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-4 text-center">
       <div className="max-w-md w-full">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Please Open in Your Browser</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Almost there!</h1>
         <p className="text-gray-600 mb-6">
-          It looks like you&apos;re in a webview, which can cause issues with signing in. For your security, please continue in your phone&apos;s default browser.
+          Seems like you are opening a webview inside another app, please continue by opening this page in your phone&apos;s default browser. Click on the three dots in the top right corner, then &apos;open in browser&apos;
         </p>
         
         <div className="flex items-center space-x-2 p-2 bg-white border rounded-lg shadow-sm">
