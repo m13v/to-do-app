@@ -106,6 +106,12 @@ const QuickPrompts: React.FC<QuickPromptsProps> = ({ onPromptSelect }) => {
     setEditedPrompts(newPrompts);
   };
 
+  const handleRestoreDefaults = () => {
+    if (window.confirm("Are you sure you want to restore the default prompts? This will overwrite your custom prompts.")) {
+      setEditedPrompts(defaultPrompts);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-wrap gap-2 mb-4">
@@ -166,10 +172,15 @@ const QuickPrompts: React.FC<QuickPromptsProps> = ({ onPromptSelect }) => {
             ))}
           </div>
           <DialogFooter className="flex justify-between items-center">
-            <Button variant="outline" onClick={handleAddPrompt}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Prompt
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleAddPrompt}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Prompt
+              </Button>
+              <Button variant="secondary" onClick={handleRestoreDefaults}>
+                Restore Defaults
+              </Button>
+            </div>
             <div>
               <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSavePrompts}>Save</Button>

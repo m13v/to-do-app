@@ -12,7 +12,7 @@ export function parseMarkdownTable(markdown: string): Task[] {
   if (process.env.NODE_ENV === 'development') {
     console.log('Parsing markdown, length:', markdown.length);
   }
-  const lines = markdown.split('\n');
+  const lines = markdown.split('\n').filter(line => line.trim() !== '' && !line.trim().startsWith('#'));
   const tasks: Task[] = [];
   
   let hasDoneColumn = false;
@@ -110,8 +110,7 @@ export function tasksToMarkdown(tasks: Task[]): string {
   if (process.env.NODE_ENV === 'development') {
     console.log('Converting tasks to markdown, count:', tasks.length);
   }
-  let markdown = '# Task Categories Table\n\n';
-  markdown += '| Category | Task | Status | Effort | Criticality | Today |\n';
+  let markdown = '| Category | Task | Status | Effort | Criticality | Today |\n';
   markdown += '|----------|------|--------|--------|-------------|-------|\n';
   
   for (const task of tasks) {

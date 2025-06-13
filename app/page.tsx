@@ -163,20 +163,24 @@ export default function Home() {
 
   const handleAIPrompt = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || allTasks.length === 0) {
+      alert("Please enter a prompt and have at least one task before using the AI Assistant.");
+      return;
+    }
 
     setProcessingAI(true);
     setLastGoodState(allTasks);
 
-    const systemPrompt = `You are an AI assistant helping to manage a todo list in a markdown file. The file content is a markdown table.
-The table has the following columns: | Category | Task | Status | Done | Effort | Criticality |
-The Effort column contains a number from 1 to 10 representing the effort level of each task.
-The Criticality column contains a number from 1 to 3 representing the criticality level of each task.
-The user will provide a prompt to modify the content.
-You must return the full markdown content, including the header.
-Do not change the table structure. Do not add or remove columns.
-Do not add any text outside of the markdown table.
-Your response will be parsed by the application, so it's critical to maintain the format.`;
+    const systemPrompt = `You are an AI assistant helping to manage a todo list. The user will provide a markdown table and a prompt.
+Your task is to return a new, updated markdown table based on the user's prompt.
+
+**RULES:**
+1.  **ONLY** return the markdown table. Do not include any other text, titles, headers, or explanations.
+2.  The table structure is fixed. The columns are: | Category | Task | Status | Effort | Criticality | Today |
+3.  Do **NOT** add, remove, or rename any columns.
+4.  Preserve the pipe `|` separators and the markdown table format exactly.
+Your output will be parsed by a script, so any deviation from this format will break the application.
+`;
 
     try {
       const response = await fetch('/api/ai', {
@@ -189,7 +193,11 @@ Your response will be parsed by the application, so it's critical to maintain th
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response from AI');
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Failed to get response from AI';
+        const errorDetails = errorData.details ? `\n\nDetails: ${errorData.details}` : '';
+        alert(`AI Error: ${errorMessage}${errorDetails}`);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -471,39 +479,36 @@ Your response will be parsed by the application, so it's critical to maintain th
                   <button onClick={retrySync} className="ml-2 underline text-red-700">Retry</button>
                 </div>
               )}
-              <Card className="mb-3">
-                <CardHeader className="py-2">
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Sparkles className="h-4 w-4 text-purple-600" />
-                      AI Assistant
-                    </div>
-                    <form onSubmit={handleSubmit} className="flex gap-2 flex-1 ml-4">
-                      <Textarea
-                        placeholder="Ask the AI to modify your tasks..."
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        className="min-h-[36px] h-9 py-1.5 resize-none"
-                        rows={1}
-                        disabled={processingAI}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSubmit(e);
-                          }
-                        }}
-                      />
-                      <Button type="submit" disabled={processingAI || !prompt.trim()} size="sm">
-                        {processingAI ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Send className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </form>
-                  </CardTitle>
-                </CardHeader>
-              </Card>
+              
+              <div className="mb-3">
+                <div className="flex items-center gap-2 text-sm mb-1">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  <span className="font-semibold">AI Assistant</span>
+                </div>
+                <form onSubmit={handleSubmit} className="flex gap-2 items-start">
+                  <Textarea
+                    placeholder="Ask the AI to modify your tasks..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="min-h-[60px] resize-y"
+                    rows={2}
+                    disabled={processingAI}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit(e);
+                      }
+                    }}
+                  />
+                  <Button type="submit" disabled={processingAI || !prompt.trim()} size="sm">
+                    {processingAI ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </form>
+              </div>
 
               <QuickPrompts onPromptSelect={setPrompt} />
 

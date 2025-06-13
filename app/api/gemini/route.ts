@@ -27,7 +27,7 @@ Please modify the markdown table according to the user's request. You can:
 - Reorganize tasks
 - Update task descriptions
 
-IMPORTANT: Return ONLY the updated markdown table content starting with "# Task Categories Table" and the table headers. Do not include any explanations or additional text.`;
+IMPORTANT: Return ONLY the updated markdown table content in the exact same format. Do not include any explanations or additional text.`;
 
     console.log('Calling Gemini API...');
     const result = await model.generateContent(systemPrompt);
