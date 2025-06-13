@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,12 +9,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Settings } from 'lucide-react';
 
 interface QuickPrompt {
   id: string;
@@ -22,133 +20,165 @@ interface QuickPrompt {
   prompt: string;
 }
 
+const defaultPrompts: QuickPrompt[] = [
+  { id: '1', title: 'Consolidate Categories', prompt: "Are any of the categories seem repetative, can we cut the number of categories by 3 pieces?" },
+  { id: '2', title: 'Improve Categories', prompt: "Are the category names good? Each cateogry should be 2 words or less, can you improve the names?" },
+  { id: '3', title: 'Find Misaligned', prompt: "Are any of crucial categories are totally misaligned with tasks? Create then, but not more than 1-3 categories, 2 words or less for each" },
+  { id: '4', title: 'Estimate Effort', prompt: "Based on the existing tasks, update the 'effort' column on a scale from 1 to 10. Distribute the estimates evenly across the entire scale." },
+  { id: '5', title: 'Estimate Criticality', prompt: "Based on the existing tasks, update the 'criticality' column on a scale from 1 to 3. Distribute the estimates evenly." },
+];
+
 interface QuickPromptsProps {
   onPromptSelect: (prompt: string) => void;
 }
 
-const initialPrompts: QuickPrompt[] = [
-    { id: '1', title: 'Create Table', prompt: "i have categories of tasks in capital letter followed by list of tasks attributed to this category, convert the task list into a table where first column is the cateogry, and second is the task. Do not make any changes to task names. Only create this table" },
-    { id: '2', title: 'Consolidate Categories', prompt: "Are any of the categories seems repetative, can we cut the number of categories by 3 pieces?" },
-    { id: '3', title: 'Improve Categories', prompt: "Are the category names good? Each cateogry should be 2 words or less, can you improve the names?" },
-    { id: '4', title: 'Find Misaligned', prompt: "Are any of crucial categories are totally misaligned with tasks? Create then, but not more than 1-3 categories, 2 words or less for each" },
-    { id: '5', title: 'Format Table', prompt: "Can you format md file so it looks like a table where each column is vertically aligned?" },
-    { id: '6', title: 'Reassign Categories', prompt: "Then review the categories list, review each task and check if the category is assigned correctly, if category needs to change, create a new second column \"new category assignment\" and put there category you'd like to change it to. Do NOT create new cateogires, only use existing ones from my list" },
-    { id: '7', title: 'Estimate Effort', prompt: "create a new column: effort: and classify each task by it on the scale from 1 to 10, make sure the distribution is subjective but even across all tasks distributing them across the entire scale from 1 to 10, even amount for each grade." },
-    { id: '8', title: 'Estimate Criticality', prompt: "create a new column: criticality: and classify each task by it on the scale from 1 to 3, make distribution even" },
-];
-
-export default function QuickPrompts({ onPromptSelect }: QuickPromptsProps) {
+const QuickPrompts: React.FC<QuickPromptsProps> = ({ onPromptSelect }) => {
   const [prompts, setPrompts] = useState<QuickPrompt[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingPrompt, setEditingPrompt] = useState<QuickPrompt | null>(null);
-  const [newTitle, setNewTitle] = useState('');
-  const [newPrompt, setNewPrompt] = useState('');
+  const [editedPrompts, setEditedPrompts] = useState<QuickPrompt[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const storedPrompts = localStorage.getItem('quickPrompts');
-    if (storedPrompts) {
-      setPrompts(JSON.parse(storedPrompts));
-    } else {
-      setPrompts(initialPrompts);
+  const fetchPrompts = useCallback(async () => {
+    try {
+      const localPrompts = localStorage.getItem('quickPrompts');
+      if (localPrompts) {
+        setPrompts(JSON.parse(localPrompts));
+      }
+
+      const response = await fetch('/api/prompts');
+      if (response.ok) {
+        const serverPrompts = await response.json();
+        if (serverPrompts.length > 0) {
+          setPrompts(serverPrompts);
+          localStorage.setItem('quickPrompts', JSON.stringify(serverPrompts));
+        } else if (!localPrompts) {
+          setPrompts(defaultPrompts);
+        }
+      } else if (!localPrompts) {
+        setPrompts(defaultPrompts);
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to fetch prompts, using defaults/local', error);
+      }
+      if (!localStorage.getItem('quickPrompts')) {
+        setPrompts(defaultPrompts);
+      }
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (prompts.length > 0) {
-        localStorage.setItem('quickPrompts', JSON.stringify(prompts));
-    }
-  }, [prompts]);
+    fetchPrompts();
+  }, [fetchPrompts]);
 
-  const handleEdit = (prompt: QuickPrompt) => {
-    setEditingPrompt(prompt);
-    setNewTitle(prompt.title);
-    setNewPrompt(prompt.prompt);
+  const handleOpenDialog = () => {
+    setEditedPrompts(JSON.parse(JSON.stringify(prompts)));
     setIsDialogOpen(true);
   };
 
-  const handleAddNew = () => {
-    setEditingPrompt(null);
-    setNewTitle('');
-    setNewPrompt('');
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (id: string) => {
-    setPrompts(prompts.filter((p) => p.id !== id));
-  };
-
-  const handleSave = () => {
-    if (editingPrompt) {
-      setPrompts(
-        prompts.map((p) =>
-          p.id === editingPrompt.id ? { ...p, title: newTitle, prompt: newPrompt } : p
-        )
-      );
-    } else {
-      setPrompts([...prompts, { id: Date.now().toString(), title: newTitle, prompt: newPrompt }]);
-    }
+  const handleSavePrompts = async () => {
+    setPrompts(editedPrompts);
+    localStorage.setItem('quickPrompts', JSON.stringify(editedPrompts));
     setIsDialogOpen(false);
+
+    await fetch('/api/prompts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editedPrompts),
+    });
   };
+
+  const handlePromptChange = (index: number, field: 'title' | 'prompt', value: string) => {
+    const newPrompts = [...editedPrompts];
+    newPrompts[index] = { ...newPrompts[index], [field]: value };
+    setEditedPrompts(newPrompts);
+  };
+
+  const handleAddPrompt = () => {
+    setEditedPrompts([...editedPrompts, { id: `new-${Date.now()}`, title: 'New Prompt', prompt: '' }]);
+  };
+
+  const handleDeletePrompt = (index: number) => {
+    const newPrompts = [...editedPrompts];
+    newPrompts.splice(index, 1);
+    setEditedPrompts(newPrompts);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-wrap gap-2 mb-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-gray-200 dark:bg-gray-700 h-8 w-36 rounded-md animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <TooltipProvider>
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        {prompts.map((prompt) => (
-          <div key={prompt.id} className="group relative">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={() => onPromptSelect(prompt.prompt)}>
-                  {prompt.title}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs">{prompt.prompt}</p>
-              </TooltipContent>
-            </Tooltip>
-            <div className="absolute top-0 right-0 -mt-2 -mr-2 hidden group-hover:flex gap-1">
-              <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full bg-white" onClick={() => handleEdit(prompt)}>
-                <Pencil className="h-3 w-3" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-5 w-5 rounded-full bg-white" onClick={() => handleDelete(prompt.id)}>
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
+    <>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {prompts.map(prompt => (
+          <Button
+            key={prompt.id}
+            variant="outline"
+            size="sm"
+            onClick={() => onPromptSelect(prompt.prompt)}
+            className="text-xs"
+          >
+            {prompt.title}
+          </Button>
         ))}
-        <Button variant="outline" size="sm" onClick={handleAddNew}>
-          <Plus className="h-4 w-4 mr-1" />
-          New
+        <Button variant="ghost" size="sm" onClick={handleOpenDialog} className="h-8 w-8 p-0">
+          <Settings className="h-4 w-4" />
         </Button>
       </div>
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{editingPrompt ? 'Edit Prompt' : 'Add New Prompt'}</DialogTitle>
+            <DialogTitle>Manage Quick Prompts</DialogTitle>
             <DialogDescription>
-              {editingPrompt ? 'Edit the title and prompt below.' : 'Create a new quick prompt for the AI assistant.'}
+              Add, edit, or delete your custom AI prompts.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Input
-              placeholder="Button Title"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-            />
-            <Textarea
-              placeholder="AI Prompt"
-              value={newPrompt}
-              onChange={(e) => setNewPrompt(e.target.value)}
-              rows={5}
-            />
+          <div className="max-h-[60vh] overflow-y-auto p-1 space-y-4">
+            {editedPrompts.map((prompt, index) => (
+              <div key={index} className="flex items-start gap-2 p-3 border rounded-md">
+                <div className="flex-grow space-y-2">
+                  <Input
+                    placeholder="Prompt Title"
+                    value={prompt.title}
+                    onChange={(e) => handlePromptChange(index, 'title', e.target.value)}
+                  />
+                  <Textarea
+                    placeholder="Prompt content..."
+                    value={prompt.prompt}
+                    onChange={(e) => handlePromptChange(index, 'prompt', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => handleDeletePrompt(index)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="ghost">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSave}>Save</Button>
+          <DialogFooter className="flex justify-between items-center">
+            <Button variant="outline" onClick={handleAddPrompt}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Prompt
+            </Button>
+            <div>
+              <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSavePrompts}>Save</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </TooltipProvider>
+    </>
   );
-} 
+};
+
+export default QuickPrompts; 
