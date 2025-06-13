@@ -121,7 +121,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                   handlePriorityChange(task.id, editedTask.priority);
                 }
               }}
-              className="h-6 w-12 py-0 text-center"
+              className="h-6 py-0 text-center"
             />
           </TableCell>
           <TableCell className="font-medium py-0.5 px-0">
