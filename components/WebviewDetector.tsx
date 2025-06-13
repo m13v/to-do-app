@@ -17,7 +17,10 @@ const WebviewDetector = () => {
     const isIOS = /iphone|ipad|ipod/.test(userAgent);
     const isIOSWebView = isIOS && !userAgent.includes('safari');
     
-    if (isAndroidWebView || isIOSWebView) {
+    // Also check if the user is on the sign-in page
+    const isOnSignInPage = window.location.hostname === 'accounts.todoapp.ai';
+
+    if ((isAndroidWebView || isIOSWebView) && isOnSignInPage) {
       setIsWebview(true);
     }
     
