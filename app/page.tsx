@@ -24,6 +24,7 @@ import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/n
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner"
 import { generateDiff } from '@/lib/diff';
+import AnimatedTitle from '@/components/AnimatedTitle';
 
 type SortField = 'priority' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
@@ -556,8 +557,8 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b">
-          <h1 className="text-xl font-semibold">My Tasks</h1>
-          <UserButton afterSignOutUrl="/"/>
+        <AnimatedTitle />
+        <UserButton afterSignOutUrl="/"/>
       </header>
       <main className="flex-1 overflow-y-auto p-4">
         <SignedIn>
@@ -681,14 +682,14 @@ export default function Home() {
                       <Table className="table-fixed w-full">
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-[25px] px-1"></TableHead>
-                            <TableHead className="w-[40px] px-1">#</TableHead>
-                            <TableHead className="w-[150px] px-1">Category</TableHead>
-                            <TableHead className="w-[120px] px-1">Status</TableHead>
-                            <TableHead className="w-[40px] px-1">E</TableHead>
-                            <TableHead className="w-[40px] px-1">C</TableHead>
-                            <TableHead className="w-auto px-1">Task</TableHead>
-                            <TableHead className="w-[60px] px-1">Today</TableHead>
+                            <TableHead className="w-[25px] px-0.5"></TableHead>
+                            <TableHead className="w-[40px] px-0.5">#</TableHead>
+                            <TableHead className="w-[150px] px-0.5">Category</TableHead>
+                            <TableHead className="w-[120px] px-0.5">Status</TableHead>
+                            <TableHead className="w-[40px] px-0.5">E</TableHead>
+                            <TableHead className="w-[40px] px-0.5">C</TableHead>
+                            <TableHead className="w-auto px-0.5">Task</TableHead>
+                            <TableHead className="w-[60px] px-0.5">Today</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -727,8 +728,8 @@ export default function Home() {
                       <Table className="table-fixed w-full">
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-[25px] px-1"></TableHead>
-                            <TableHead className="w-[60px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                            <TableHead className="w-[25px] px-0.5"></TableHead>
+                            <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -740,13 +741,13 @@ export default function Home() {
                                 </Tooltip>
                               </TooltipProvider>
                             </TableHead>
-                            <TableHead className="w-[140px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                            <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
                               <div className="flex items-center gap-1">
                                 Category {getSortIcon('category')}
                               </div>
                             </TableHead>
-                            <TableHead className="w-[120px] px-1">Status</TableHead>
-                            <TableHead className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
+                            <TableHead className="w-[120px] px-0.5">Status</TableHead>
+                            <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -758,7 +759,7 @@ export default function Home() {
                                 </Tooltip>
                               </TooltipProvider>
                             </TableHead>
-                            <TableHead className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
+                            <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -770,13 +771,13 @@ export default function Home() {
                                 </Tooltip>
                               </TooltipProvider>
                             </TableHead>
-                            <TableHead className="w-auto px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                            <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
                               <div className="flex items-center gap-1">
                                 Task {getSortIcon('task')}
                               </div>
                             </TableHead>
-                            <TableHead className="w-[60px] px-1">Today</TableHead>
-                            <TableHead className="w-[140px] px-1 text-right" title="Actions">Actions</TableHead>
+                            <TableHead className="w-[60px] px-0.5">Today</TableHead>
+                            <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <Droppable droppableId="tasks">
@@ -824,11 +825,11 @@ export default function Home() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="w-[60px] px-1">Today</TableHead>
+                                <TableHead className="w-[60px] px-0.5">Today</TableHead>
                                 <TableHead>Task</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead className="w-[100px] px-1 text-right">Actions</TableHead>
+                                <TableHead className="w-[100px] px-0.5 text-right">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
