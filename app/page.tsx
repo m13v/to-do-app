@@ -167,8 +167,9 @@ export default function Home() {
   useEffect(() => {
     if (loading || !user || syncError) return;
     const handler = setTimeout(() => {
+      // This is now just a periodic backup, not the primary save mechanism.
       saveTasks(tasks);
-    }, 5000);
+    }, 10000); // Increased to 10 seconds for safety backup
     return () => clearTimeout(handler);
   }, [tasks, loading, user, saveTasks, syncError]);
 
@@ -266,36 +267,37 @@ Your response will be parsed by the application, so it's critical to maintain th
     handleAIPrompt(e);
   }, [handleAIPrompt]);
 
-  const handleTaskUpdate = useCallback((id: string, field: keyof Omit<Task, 'id'>, value: string) => {
-    setTasks(currentTasks =>
-      currentTasks.map(task =>
-        task.id === id ? { ...task, [field]: value } : task
-      )
+  const handleTaskUpdate = useCallback((id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => {
+    const newTasks = tasks.map(task =>
+      task.id === id ? { ...task, [field]: value } : task
     );
-  }, []);
+    setTasks(newTasks);
+    saveTasks(newTasks);
+  }, [tasks, saveTasks]);
   
-  const handleAddTask = useCallback((afterId: string) => {
-    setTasks(currentTasks => {
-      const afterIndex = currentTasks.findIndex(t => t.id === afterId);
-      const category = currentTasks[afterIndex]?.category || 'NEW';
-      const newTask: Task = { id: `${Date.now()}-${Math.random()}`, category, task: '', status: 'to_do', effort: '5', criticality: '2' };
-      return insertTaskAt(currentTasks, afterIndex, newTask);
-    });
-  }, []);
+  const handleAddTask = useCallback(() => {
+    const newTasks = insertTaskAt(tasks, tasks.length, { id: `${Date.now()}-${Math.random()}`, category: 'NEW', task: '', status: 'to_do', effort: '5', criticality: '2' });
+    setTasks(newTasks);
+    saveTasks(newTasks);
+  }, [tasks, saveTasks]);
 
   const handleDeleteTask = useCallback((id: string) => {
-    setTasks(currentTasks => currentTasks.filter(task => task.id !== id));
-  }, []);
+    const newTasks = tasks.filter(task => task.id !== id);
+    setTasks(newTasks);
+    saveTasks(newTasks);
+  }, [tasks, saveTasks]);
 
   const handleDuplicateTask = useCallback((id: string) => {
-    setTasks(currentTasks => {
-      const taskToDuplicate = currentTasks.find(t => t.id === id);
-      if (!taskToDuplicate) return currentTasks;
-      const index = currentTasks.findIndex(t => t.id === id);
+    let newTasks = [...tasks];
+    const taskToDuplicate = newTasks.find(t => t.id === id);
+    if (taskToDuplicate) {
+      const index = newTasks.findIndex(t => t.id === id);
       const duplicatedTask: Task = { ...taskToDuplicate, id: `${Date.now()}-${Math.random()}` };
-      return insertTaskAt(currentTasks, index, duplicatedTask);
-    });
-  }, []);
+      newTasks = insertTaskAt(newTasks, index, duplicatedTask);
+      setTasks(newTasks);
+      saveTasks(newTasks);
+    }
+  }, [tasks, saveTasks]);
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
@@ -543,8 +545,8 @@ Your response will be parsed by the application, so it's critical to maintain th
                                   key={task.id}
                                   task={task}
                                   index={index}
-                                  handleTaskUpdate={handleTaskUpdate}
-                                  handleAddTask={handleAddTask}
+                                  handleTaskUpdate={(id, field, value) => handleTaskUpdate(id, field, value)}
+                                  handleAddTask={() => handleAddTask()}
                                   handleDuplicateTask={handleDuplicateTask}
                                   handleDeleteTask={handleDeleteTask}
                                 />

@@ -19,8 +19,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 interface TaskRowProps {
   task: Task;
   index: number;
-  handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id'>, value: string) => void;
-  handleAddTask: (id: string) => void;
+  handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => void;
+  handleAddTask: () => void;
   handleDuplicateTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
 }
@@ -40,13 +40,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
   }, [task]);
 
   const debouncedUpdate = useDebouncedCallback(
-    (field: keyof Omit<Task, 'id'>, value: string) => {
+    (field: keyof Omit<Task, 'id'>, value: string | boolean) => {
       handleTaskUpdate(task.id, field, value);
     },
     300
   );
 
-  const handleChange = (field: keyof Omit<Task, 'id'>, value: string) => {
+  const handleChange = (field: keyof Omit<Task, 'id'>, value: string | boolean) => {
     setEditedTask(prev => ({ ...prev, [field]: value }));
     debouncedUpdate(field, value);
   };
@@ -134,7 +134,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 if (process.env.NODE_ENV === 'development') {
                   console.log('Today checkbox changed:', checked, editedTask.id);
                 }
-                handleChange('today', checked ? 'true' : '');
+                handleChange('today', !!checked);
               }}
               aria-label="Mark as today"
             />
@@ -142,7 +142,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
           <TableCell className="py-1 px-1 text-right">
             <div className="flex items-center justify-end gap-0.5">
               <Button
-                onClick={() => handleAddTask(task.id)}
+                onClick={() => handleAddTask()}
                 size="sm"
                 variant="ghost"
                 className="h-6 w-6 p-0"
