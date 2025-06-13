@@ -730,12 +730,10 @@ export default function Home() {
                           <TableRow>
                             <TableHead className="w-[25px] px-0.5"></TableHead>
                             <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
-                              <TooltipProvider>
+                               <TooltipProvider>
                                 <Tooltip>
-                                  <TooltipTrigger>
-                                    <div className="flex items-center gap-1">
-                                      P {getSortIcon('priority')}
-                                    </div>
+                                  <TooltipTrigger className="w-full h-full flex items-center justify-center">
+                                    {getSortIcon('priority')}
                                   </TooltipTrigger>
                                   <TooltipContent>Overall Priority</TooltipContent>
                                 </Tooltip>
