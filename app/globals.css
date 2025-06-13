@@ -119,6 +119,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  .table {
+    table-layout: fixed;
+  }
 }
 
 /* Custom scrollbar */
