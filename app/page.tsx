@@ -562,7 +562,7 @@ export default function Home() {
         <AnimatedTitle />
         <UserButton afterSignOutUrl="/"/>
       </header>
-      <main className="flex-1 overflow-y-auto md:p-4">
+      <main className="flex-1 overflow-y-auto p-2 md:p-4">
         <SignedIn>
           {loading ? (
             <div className="flex items-center justify-center h-full">
