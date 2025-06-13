@@ -20,7 +20,13 @@ interface QuickPrompt {
   prompt: string;
 }
 
-const defaultPrompts: QuickPrompt[] = [];
+const defaultPrompts: QuickPrompt[] = [
+  { id: '1', title: 'Consolidate Categories', prompt: "Are any of the categories seem repetative, can we cut the number of categories by 3 pieces?" },
+  { id: '2', title: 'Improve Categories Names', prompt: "Are the category names good? Each cateogry should be 2 words or less, can you improve the names?" },
+  { id: '3', title: 'Find categories Misaligned', prompt: "Are any of crucial categories are totally misaligned with tasks? Create then, but not more than 1-3 categories, 2 words or less for each" },
+  { id: '4', title: 'Update Effort column', prompt: "Based on the existing tasks, update the 'effort' column on a scale from 1 to 10. Distribute the estimates evenly across the entire scale." },
+  { id: '5', title: 'Update Criticality column', prompt: "Based on the existing tasks, update the 'criticality' column on a scale from 1 to 3. Distribute the estimates evenly." },
+];
 
 interface QuickPromptsProps {
   onPromptSelect: (prompt: string) => void;
