@@ -755,9 +755,9 @@ export default function Home() {
                   <CardTitle className="text-sm">Task Categories ({filteredActiveTasks.length} tasks)</CardTitle>
                 </CardHeader>
                 <CardContent className="py-2">
-                  {isDesktop ? (
-                    <div className="overflow-x-auto">
-                      <DragDropContext onDragEnd={handleDragEnd}>
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    {isDesktop ? (
+                      <div className="overflow-x-auto">
                         <Table className="table-fixed w-full">
                           <TableHeader>
                             <TableRow>
@@ -836,27 +836,32 @@ export default function Home() {
                             )}
                           </Droppable>
                         </Table>
-                      </DragDropContext>
-                    </div>
-                  ) : (
-                    <div>
-                      {sortedActiveTasks.map((task, index) => (
-                        <MobileTaskCard
-                          key={task.id}
-                          task={task}
-                          isFirst={index === 0}
-                          isLast={index === sortedActiveTasks.length - 1}
-                          onUpdate={handleTaskUpdate}
-                          onDelete={handleDeleteTask}
-                          onAdd={() => handleAddTask(task.id)}
-                          onDuplicate={() => handleDuplicateTask(task.id)}
-                          onMoveUp={() => handleMoveTaskUp(task.id)}
-                          onMoveDown={() => handleMoveTaskDown(task.id)}
-                          onPriorityChange={handlePriorityChange}
-                        />
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ) : (
+                      <Droppable droppableId="tasks-mobile" isDropDisabled={true}>
+                        {(provided) => (
+                          <div ref={provided.innerRef} {...provided.droppableProps}>
+                            {sortedActiveTasks.map((task, index) => (
+                              <MobileTaskCard
+                                key={task.id}
+                                task={task}
+                                isFirst={index === 0}
+                                isLast={index === sortedActiveTasks.length - 1}
+                                onUpdate={handleTaskUpdate}
+                                onDelete={handleDeleteTask}
+                                onAdd={() => handleAddTask(task.id)}
+                                onDuplicate={() => handleDuplicateTask(task.id)}
+                                onMoveUp={() => handleMoveTaskUp(task.id)}
+                                onMoveDown={() => handleMoveTaskDown(task.id)}
+                                onPriorityChange={handlePriorityChange}
+                              />
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    )}
+                  </DragDropContext>
                 </CardContent>
               </Card>
 
