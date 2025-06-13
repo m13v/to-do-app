@@ -57,6 +57,7 @@ export default function Home() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [focusedCell, setFocusedCell] = useState<{ row: number; col: number } | null>(null);
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
 
@@ -443,6 +444,37 @@ Your response will be parsed by the application, so it's critical to maintain th
     }
   }, [loading, runDailyReset]);
 
+  const handleCellFocus = (row: number, col: number) => {
+    setFocusedCell({ row, col });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!focusedCell) return;
+
+    let { row, col } = focusedCell;
+    const numRows = sortedActiveTasks.length;
+    const numCols = 6; // As per your current layout (Category, Status, Effort, Crit, Task, Today)
+
+    if (e.key === 'ArrowUp') {
+      row = Math.max(0, row - 1);
+    } else if (e.key === 'ArrowDown') {
+      row = Math.min(numRows - 1, row + 1);
+    } else if (e.key === 'ArrowLeft') {
+      col = Math.max(0, col - 1);
+    } else if (e.key === 'ArrowRight') {
+      col = Math.min(numCols - 1, col + 1);
+    } else {
+      return;
+    }
+
+    e.preventDefault();
+    const nextCellId = `cell-${row}-${col}`;
+    const nextCell = document.getElementById(nextCellId);
+    if (nextCell) {
+      nextCell.focus();
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b">
@@ -607,7 +639,7 @@ Your response will be parsed by the application, so it's critical to maintain th
                   <CardTitle className="text-sm">Task Categories ({filteredActiveTasks.length} tasks)</CardTitle>
                 </CardHeader>
                 <CardContent className="py-2">
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto" onKeyDown={handleKeyDown}>
                     <DragDropContext onDragEnd={handleDragEnd}>
                       <Table className="table-fixed w-full">
                         <TableHeader>
@@ -673,6 +705,7 @@ Your response will be parsed by the application, so it's critical to maintain th
                                   handleDeleteTask={() => handleDeleteTask(task.id)}
                                   handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
                                   handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
+                                  onCellFocus={handleCellFocus}
                                 />
                               ))}
                               {provided.placeholder}
@@ -716,6 +749,7 @@ Your response will be parsed by the application, so it's critical to maintain th
                                   isFirst={true} isLast={true} // Move buttons disabled
                                   handleTaskUpdate={handleTaskUpdate}
                                   handleDeleteTask={() => handleDeleteTask(task.id)}
+                                  onCellFocus={() => {}}
                                   // Pass dummy handlers for unused actions
                                   handleAddTask={() => {}}
                                   handleDuplicateTask={() => {}}

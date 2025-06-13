@@ -28,6 +28,7 @@ interface TaskRowProps {
   handleDeleteTask: (id: string) => void;
   handleMoveTaskUp: (id: string) => void;
   handleMoveTaskDown: (id: string) => void;
+  onCellFocus: (rowIndex: number, colIndex: number) => void;
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({
@@ -41,6 +42,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   handleDeleteTask,
   handleMoveTaskUp,
   handleMoveTaskDown,
+  onCellFocus,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
 
@@ -86,15 +88,17 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
           <TableCell className="font-medium py-1 px-1">
             <Input
+              id={`cell-${index}-0`}
               value={editedTask.category}
               onChange={(e) => handleChange('category', e.target.value)}
               onBlur={() => handleBlur('category')}
+              onFocus={() => onCellFocus(index, 0)}
               className="h-7 py-0"
             />
           </TableCell>
           <TableCell className="py-1 px-1">
             <Select value={editedTask.status} onValueChange={(value) => handleChange('status', value)}>
-              <SelectTrigger className="h-7 py-0">
+              <SelectTrigger id={`cell-${index}-1`} onFocus={() => onCellFocus(index, 1)} className="h-7 py-0">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -106,12 +110,14 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
           <TableCell className="py-1 px-1">
             <Input
+              id={`cell-${index}-2`}
               type="number"
               min="1"
               max="10"
               value={editedTask.effort}
               onChange={(e) => handleChange('effort', e.target.value)}
               onBlur={() => handleBlur('effort')}
+              onFocus={() => onCellFocus(index, 2)}
               className="h-7 py-0 px-0 text-center"
               placeholder="1-10"
               title={`Effort: ${editedTask.effort}`}
@@ -119,12 +125,14 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
           <TableCell className="py-1 px-1">
             <Input
+              id={`cell-${index}-3`}
               type="number"
               min="1"
               max="3"
               value={editedTask.criticality}
               onChange={(e) => handleChange('criticality', e.target.value)}
               onBlur={() => handleBlur('criticality')}
+              onFocus={() => onCellFocus(index, 3)}
               className="h-7 py-0 px-0 text-center"
               placeholder="1-3"
               title={`Criticality: ${editedTask.criticality}`}
@@ -132,15 +140,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
           <TableCell className="py-1 px-1">
             <Textarea
+              id={`cell-${index}-4`}
               value={editedTask.task}
               onChange={(e) => handleChange('task', e.target.value)}
               onBlur={() => handleBlur('task')}
+              onFocus={() => onCellFocus(index, 4)}
               className="min-h-[28px] py-0.5 resize-none"
               rows={1}
             />
           </TableCell>
           <TableCell className="py-1 px-1 text-center">
             <Checkbox
+              id={`cell-${index}-5`}
               checked={!!editedTask.today}
               onCheckedChange={checked => {
                 if (process.env.NODE_ENV === 'development') {
@@ -148,6 +159,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 }
                 handleChange('today', !!checked);
               }}
+              onFocus={() => onCellFocus(index, 5)}
               aria-label="Mark as today"
             />
           </TableCell>
