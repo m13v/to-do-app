@@ -746,7 +746,7 @@ export default function Home() {
                                 Category {getSortIcon('category')}
                               </div>
                             </TableHead>
-                            <TableHead className="w-[120px] px-0.5">Status</TableHead>
+                            <TableHead className="w-[100px] px-0.5">Status</TableHead>
                             <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
                               <TooltipProvider>
                                 <Tooltip>
@@ -951,7 +951,7 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center p-6">
             <Loader2 className="h-16 w-16 animate-spin text-purple-600" />
             <p className="mt-4 text-lg font-semibold">
-              Time remaining: {countdown} seconds
+              Time remaining (might take less): {countdown} seconds
             </p>
             {countdown === 0 && <p className="text-sm text-gray-500 mt-2">The AI is taking longer than usual. Please be patient.</p>}
           </div>
