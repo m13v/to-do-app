@@ -1,16 +1,26 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware } from '@clerk/nextjs/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Define the routes that should be protected
-const isProtectedRoute = createRouteMatcher([
-  '/',
-  '/dashboard(.*)', // Add any other routes you want to protect
-]);
+export default clerkMiddleware((auth, req: NextRequest) => {
+  const userAgent = req.headers.get('user-agent')?.toLowerCase() || '';
 
-export default clerkMiddleware(async (auth, req) => {
-  // If the route is protected, enforce authentication
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+  const isAndroidWebView = userAgent.includes('wv');
+  const isIOS = /iphone|ipad|ipod/.test(userAgent);
+  const isIOSWebView = isIOS && !userAgent.includes('safari');
+
+  const isWebview = isAndroidWebView || isIOSWebView;
+
+  // Allow access to the /open-in-browser page
+  if (req.nextUrl.pathname === '/open-in-browser') {
+    return NextResponse.next();
   }
+
+  if (isWebview) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/open-in-browser';
+    return NextResponse.redirect(url);
+  }
+
 });
 
 export const config = {
