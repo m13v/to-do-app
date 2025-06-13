@@ -29,45 +29,46 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, isFirst, isLast, 
   }, [task]);
 
   return (
-    <Card className={cn("mb-2", task.status === 'done' && 'bg-muted')}>
-      <CardContent className="p-3">
-        <div className="flex items-start gap-3">
-          <div className="flex flex-col items-center pt-1">
-            <span className="text-sm font-bold">{task.priority}</span>
+    <Card className={cn("mb-1", task.status === 'done' && 'bg-muted')}>
+      <CardContent className="p-2">
+        <Textarea
+          value={editedTask.task}
+          onChange={(e) => setEditedTask(prev => ({...prev, task: e.target.value}))}
+          onBlur={() => {
+            if(editedTask.task !== task.task) {
+              onUpdate(task.id, 'task', editedTask.task);
+            }
+          }}
+          className={cn(
+            "w-full text-sm font-semibold p-1 resize-none border-0 shadow-none focus-visible:ring-0",
+            task.status === 'done' && 'line-through'
+          )}
+          rows={Math.max(1, Math.floor(editedTask.task.length / 35))}
+        />
+        <div className="text-xs text-muted-foreground mt-1 grid grid-cols-2 gap-x-2 gap-y-1">
+          <div className="flex items-center gap-1">
+            <strong className="text-foreground">P:</strong>
+            <span>{task.priority}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <strong className="text-foreground">Today:</strong>
             <Checkbox
               checked={!!task.today}
               onCheckedChange={checked => onUpdate(task.id, 'today', !!checked)}
-              className="mt-1"
+              className="ml-1"
             />
           </div>
-          <div className="flex-grow">
-            <Textarea
-              value={editedTask.task}
-              onChange={(e) => {
-                setEditedTask(prev => ({...prev, task: e.target.value}));
-              }}
-              onBlur={() => {
-                if(editedTask.task !== task.task) {
-                  onUpdate(task.id, 'task', editedTask.task);
-                }
-              }}
-              className={cn("font-semibold min-h-[28px] p-1 resize-none", task.status === 'done' && 'line-through')}
-              rows={1}
-            />
-            <div className="text-xs text-muted-foreground mt-2 flex items-center gap-2 flex-wrap">
-              <span><strong className="text-foreground">Category:</strong> {task.category}</span>
-              <span><strong className="text-foreground">Status:</strong> {task.status}</span>
-              <span><strong className="text-foreground">Effort:</strong> {task.effort}</span>
-              <span><strong className="text-foreground">Crit:</strong> {task.criticality}</span>
-            </div>
-          </div>
+          <div><strong className="text-foreground">Category:</strong> {task.category}</div>
+          <div><strong className="text-foreground">Status:</strong> {task.status}</div>
+          <div><strong className="text-foreground">Effort:</strong> {task.effort}</div>
+          <div><strong className="text-foreground">Crit:</strong> {task.criticality}</div>
         </div>
-        <div className="mt-2 pt-2 border-t flex items-center justify-end gap-1">
-           <Button onClick={() => onMoveUp(task.id)} size="sm" variant="ghost" className="h-7 w-7 p-0" disabled={isFirst}><ArrowUp className="h-4 w-4" /></Button>
-           <Button onClick={() => onMoveDown(task.id)} size="sm" variant="ghost" className="h-7 w-7 p-0" disabled={isLast}><ArrowDown className="h-4 w-4" /></Button>
-           <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-7 w-7 p-0"><Plus className="h-4 w-4" /></Button>
-           <Button onClick={() => onDuplicate(task.id)} size="sm" variant="ghost" className="h-7 w-7 p-0"><Copy className="h-4 w-4" /></Button>
-           <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-7 w-7 p-0"><X className="h-4 w-4" /></Button>
+        <div className="mt-1 pt-1 border-t flex items-center justify-end gap-0">
+           <Button onClick={() => onMoveUp(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0" disabled={isFirst}><ArrowUp className="h-4 w-4" /></Button>
+           <Button onClick={() => onMoveDown(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0" disabled={isLast}><ArrowDown className="h-4 w-4" /></Button>
+           <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><Plus className="h-4 w-4" /></Button>
+           <Button onClick={() => onDuplicate(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><Copy className="h-4 w-4" /></Button>
+           <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><X className="h-4 w-4" /></Button>
         </div>
       </CardContent>
     </Card>
