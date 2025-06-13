@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Task } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
-import { ArrowUp, ArrowDown, Plus, Copy, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, Plus, Copy, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface MobileTaskCardProps {
   task: Task;
@@ -23,12 +25,10 @@ interface MobileTaskCardProps {
 }
 
 const NumberStepper: React.FC<{ value: number | string; onChange: (newValue: number) => void; min?: number; max?: number; }> = ({ value, onChange, min, max }) => (
-  <div className="flex items-center gap-1">
+  <div className="flex items-center gap-1.5">
+    <Button onClick={() => onChange(Math.max(min ?? -Infinity, Number(value) - 1))} size="sm" variant="ghost" className="h-5 w-5 p-0"><ChevronLeft className="h-4 w-4" /></Button>
     <span>{value}</span>
-    <div className="flex flex-col">
-      <Button onClick={() => onChange(Math.min(max ?? Infinity, Number(value) + 1))} size="sm" variant="ghost" className="h-4 w-4 p-0"><ChevronUp className="h-3 w-3" /></Button>
-      <Button onClick={() => onChange(Math.max(min ?? -Infinity, Number(value) - 1))} size="sm" variant="ghost" className="h-4 w-4 p-0"><ChevronDown className="h-3 w-3" /></Button>
-    </div>
+    <Button onClick={() => onChange(Math.min(max ?? Infinity, Number(value) + 1))} size="sm" variant="ghost" className="h-5 w-5 p-0"><ChevronRight className="h-4 w-4" /></Button>
   </div>
 );
 
@@ -40,7 +40,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, isFirst, isLast, 
   }, [task]);
 
   return (
-    <Card className={cn("mb-1", task.status === 'done' && 'bg-muted')}>
+    <Card className={cn("mb-1 rounded-md", task.status === 'done' && 'bg-muted')}>
       <CardContent className="p-2 space-y-2">
         <Textarea
           value={editedTask.task}
@@ -70,11 +70,25 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, isFirst, isLast, 
           </div>
           <div className="flex items-center justify-between">
             <strong className="text-foreground">Category:</strong>
-            <span>{task.category}</span>
+            <Input
+                value={editedTask.category}
+                onChange={(e) => setEditedTask(prev => ({...prev, category: e.target.value}))}
+                onBlur={() => onUpdate(task.id, 'category', editedTask.category)}
+                className="h-6 text-xs w-24 text-right border-0"
+            />
           </div>
           <div className="flex items-center justify-between">
             <strong className="text-foreground">Status:</strong>
-            <span>{task.status}</span>
+            <Select value={editedTask.status} onValueChange={(value) => onUpdate(task.id, 'status', value)}>
+              <SelectTrigger className="h-6 text-xs w-24 border-0 justify-end">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="to_do">To Do</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center justify-between">
             <strong className="text-foreground">Effort:</strong>
@@ -85,7 +99,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, isFirst, isLast, 
             <NumberStepper value={task.criticality} onChange={(newVal) => onUpdate(task.id, 'criticality', String(newVal))} min={1} max={3} />
           </div>
         </div>
-        <div className="pt-1 border-t flex items-center justify-end gap-0">
+        <div className="flex items-center justify-end gap-0">
            <Button onClick={() => onMoveUp(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0" disabled={isFirst}><ArrowUp className="h-4 w-4" /></Button>
            <Button onClick={() => onMoveDown(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0" disabled={isLast}><ArrowDown className="h-4 w-4" /></Button>
            <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><Plus className="h-4 w-4" /></Button>

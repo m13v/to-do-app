@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Undo, Redo } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task } from '@/lib/markdown-parser';
@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner"
 import { generateDiff } from '@/lib/diff';
 import AnimatedTitle from '@/components/AnimatedTitle';
@@ -683,42 +682,70 @@ export default function Home() {
                     <CardTitle className="text-sm">Today&apos;s Tasks ({todayTasks.length})</CardTitle>
                   </CardHeader>
                   <CardContent className="py-2">
-                    <div className="overflow-x-auto">
-                      <Table className="table-fixed w-full">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[25px] px-0.5"></TableHead>
-                            <TableHead className="w-[40px] px-0.5">#</TableHead>
-                            <TableHead className="w-[150px] px-0.5">Category</TableHead>
-                            <TableHead className="w-[120px] px-0.5">Status</TableHead>
-                            <TableHead className="w-[40px] px-0.5">E</TableHead>
-                            <TableHead className="w-[40px] px-0.5">C</TableHead>
-                            <TableHead className="w-auto px-0.5">Task</TableHead>
-                            <TableHead className="w-[60px] px-0.5">Today</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {todayTasks.map((task, idx) => (
-                            <TableRow key={task.id}>
-                              <TableCell></TableCell>
-                              <TableCell>{idx + 1}</TableCell>
-                              <TableCell>{task.category}</TableCell>
-                              <TableCell>{task.status}</TableCell>
-                              <TableCell>{task.effort}</TableCell>
-                              <TableCell>{task.criticality}</TableCell>
-                              <TableCell>{task.task}</TableCell>
-                              <TableCell>
-                                <Checkbox
-                                  checked={!!task.today}
-                                  onCheckedChange={checked => handleTaskUpdate(task.id, 'today', checked ? 'true' : '')}
-                                  aria-label="Mark as today"
-                                />
-                              </TableCell>
+                    {isDesktop ? (
+                      <div className="overflow-x-auto">
+                        <Table className="table-fixed w-full">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger className="w-full h-full flex items-center justify-center">
+                                      {getSortIcon('priority')}
+                                    </TooltipTrigger>
+                                    <TooltipContent>Overall Priority</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableHead>
+                              <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>Category</TableHead>
+                              <TableHead className="w-auto px-0.5">Task</TableHead>
+                              <TableHead className="w-[100px] px-0.5">Status</TableHead>
+                              <TableHead className="w-[40px] px-0.5">E</TableHead>
+                              <TableHead className="w-[40px] px-0.5">C</TableHead>
+                              <TableHead className="w-[60px] px-0.5">Today</TableHead>
+                              <TableHead className="w-[140px] px-0.5 text-right">Actions</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                          </TableHeader>
+                          <TableBody>
+                            {todayTasks.map((task, idx) => (
+                              <TaskRow
+                                key={task.id}
+                                task={task}
+                                index={idx}
+                                isFirst={idx === 0}
+                                isLast={idx === todayTasks.length - 1}
+                                handleTaskUpdate={handleTaskUpdate}
+                                handlePriorityChange={handlePriorityChange}
+                                handleAddTask={() => handleAddTask(task.id)}
+                                handleDuplicateTask={() => handleDuplicateTask(task.id)}
+                                handleDeleteTask={() => handleDeleteTask(task.id)}
+                                handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
+                                handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
+                                focusCell={focusCell}
+                              />
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div>
+                        {todayTasks.map((task, index) => (
+                          <MobileTaskCard
+                            key={task.id}
+                            task={task}
+                            isFirst={index === 0}
+                            isLast={index === todayTasks.length - 1}
+                            onUpdate={handleTaskUpdate}
+                            onDelete={handleDeleteTask}
+                            onAdd={() => handleAddTask(task.id)}
+                            onDuplicate={() => handleDuplicateTask(task.id)}
+                            onMoveUp={() => handleMoveTaskUp(task.id)}
+                            onMoveDown={() => handleMoveTaskDown(task.id)}
+                            onPriorityChange={handlePriorityChange}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
