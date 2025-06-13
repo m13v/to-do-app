@@ -1018,4 +1018,4 @@ export default function Home() {
   );
 }
 
-// Trigger deployment
+// Trigger deployment - Fix drag-and-drop invariant error
