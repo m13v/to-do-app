@@ -101,32 +101,51 @@ export default function Home() {
   const loadTasks = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    let tasksToLoad: Task[] = [];
+
+    let loadedTasks: Task[] = [];
+    let serverFetchError = false;
+
+    // 1. Always try to fetch from Supabase first
     try {
-      const storedMarkdown = localStorage.getItem('markdownContent');
-      if (storedMarkdown) {
-        tasksToLoad = parseMarkdownTable(storedMarkdown);
-      } else {
-        const response = await fetch('/api/tasks');
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.content) {
-            tasksToLoad = parseMarkdownTable(data.content);
-          }
+      const response = await fetch('/api/tasks');
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.content) {
+          console.log("Successfully fetched tasks from server.");
+          loadedTasks = parseMarkdownTable(data.content);
+          // Update localStorage with the latest from the server
+          localStorage.setItem('markdownContent', data.content);
         }
-      }
-      if (tasksToLoad.length === 0) {
-        tasksToLoad = parseMarkdownTable(defaultTasksMarkdown);
+      } else {
+        serverFetchError = true;
+        console.error('Server responded with an error:', response.status);
       }
     } catch (error) {
-      console.error("Failed to load tasks, using defaults:", error);
-      tasksToLoad = parseMarkdownTable(defaultTasksMarkdown);
-    } finally {
-      setActiveTasks(tasksToLoad.filter(t => t.status !== 'done'));
-      setDoneTasks(tasksToLoad.filter(t => t.status === 'done'));
-      setLoading(false);
+      serverFetchError = true;
+      console.error('Failed to fetch from server:', error);
     }
-  }, [user]);
+
+    // 2. If server fetch failed, try localStorage
+    if (serverFetchError && loadedTasks.length === 0) {
+      console.log("Falling back to localStorage.");
+      const storedMarkdown = localStorage.getItem('markdownContent');
+      if (storedMarkdown) {
+        loadedTasks = parseMarkdownTable(storedMarkdown);
+      }
+    }
+
+    // 3. If still no tasks, use defaults
+    if (loadedTasks.length === 0) {
+      console.log("No tasks found, loading defaults.");
+      loadedTasks = parseMarkdownTable(defaultTasksMarkdown);
+      // Immediately save defaults to establish a baseline
+      saveTasks(loadedTasks);
+    }
+    
+    setActiveTasks(loadedTasks.filter(t => t.status !== 'done'));
+    setDoneTasks(loadedTasks.filter(t => t.status === 'done'));
+    setLoading(false);
+  }, [user, saveTasks]);
 
   useEffect(() => {
     if (user) {
