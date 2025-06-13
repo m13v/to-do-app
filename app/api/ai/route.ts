@@ -3,7 +3,7 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, Schema, SchemaTyp
 
 // --- Reusable Gemini Setup ---
 
-const MODEL_NAME = "gemini-1.5-flash"; // Sticking with the flash model as requested
+const MODEL_NAME = "gemini-2.5-pro-preview-06-05"; // Sticking with the flash model as requested
 
 function getGenAI() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -64,8 +64,13 @@ export async function POST(request: NextRequest) {
 
     const result = await chat.sendMessage(userPrompt);
     const response = result.response;
+    const finishReason = response.candidates?.[0]?.finishReason;
 
     console.log("Full AI response object:", JSON.stringify(response, null, 2));
+
+    if (finishReason === 'MAX_TOKENS') {
+      throw new Error("The AI's response was too long and was cut off. Please try filtering your tasks to reduce the size of the request, or break your request into smaller parts.");
+    }
 
     if (response.promptFeedback && response.promptFeedback.blockReason) {
       throw new Error(`Request was blocked. Reason: ${response.promptFeedback.blockReason}`);
