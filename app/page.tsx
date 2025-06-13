@@ -22,6 +22,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from "sonner"
 
 type SortField = 'id' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
@@ -261,9 +262,12 @@ export default function Home() {
       }
       
       setAiGeneratedContent(data.content);
+      toast.success("AI modifications generated successfully. Please review and confirm.");
 
     } catch (error) {
       console.error('Error processing AI prompt:', error);
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+      toast.error(`AI Processing Failed: ${errorMessage}`);
     } finally {
       setProcessingAI(false);
     }
@@ -271,16 +275,23 @@ export default function Home() {
 
   const handleConfirmAIChanges = () => {
     if (aiGeneratedContent && tasksSentToAI) {
-      const parsedTasks = parseMarkdownTable(aiGeneratedContent);
-      
-      const taskIdsSentToAI = new Set(tasksSentToAI.map(t => t.id));
-      const tasksToKeep = allTasks.filter(t => !taskIdsSentToAI.has(t.id));
+      try {
+        const parsedTasks = parseMarkdownTable(aiGeneratedContent);
+        
+        const taskIdsSentToAI = new Set(tasksSentToAI.map(t => t.id));
+        const tasksToKeep = allTasks.filter(t => !taskIdsSentToAI.has(t.id));
 
-      const finalTasks = [...tasksToKeep, ...parsedTasks];
+        const finalTasks = [...tasksToKeep, ...parsedTasks];
 
-      updateAndSaveTasks(finalTasks);
-      setAiGeneratedContent(null);
-      setTasksSentToAI(null);
+        updateAndSaveTasks(finalTasks);
+        setAiGeneratedContent(null);
+        setTasksSentToAI(null);
+        toast.success("AI changes applied successfully!");
+      } catch (error) {
+        console.error("Failed to apply AI changes:", error);
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        toast.error(`Failed to apply AI changes: ${errorMessage}`);
+      }
     }
   };
 
