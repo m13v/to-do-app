@@ -3,5 +3,6 @@
     "app/api/ai/route.ts": {
       "maxDuration": 800
     }
-  }
+  },
+  "alias": ["todoapp.ai"]
 }
