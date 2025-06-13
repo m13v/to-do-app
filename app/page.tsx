@@ -687,6 +687,7 @@ export default function Home() {
                         <Table className="table-fixed w-full">
                           <TableHeader>
                             <TableRow>
+                              <TableHead className="w-[25px] px-0.5"></TableHead>
                               <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                 <TooltipProvider>
                                   <Tooltip>
@@ -697,13 +698,43 @@ export default function Home() {
                                   </Tooltip>
                                 </TooltipProvider>
                               </TableHead>
-                              <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>Category</TableHead>
-                              <TableHead className="w-auto px-0.5">Task</TableHead>
+                              <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                <div className="flex items-center gap-1">
+                                  Category {getSortIcon('category')}
+                                </div>
+                              </TableHead>
                               <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                              <TableHead className="w-[40px] px-0.5">E</TableHead>
-                              <TableHead className="w-[40px] px-0.5">C</TableHead>
+                              <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <div className="flex items-center justify-center gap-1">
+                                        E {getSortIcon('effort')}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Effort (1-10)</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableHead>
+                              <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <div className="flex items-center justify-center gap-1">
+                                        C {getSortIcon('criticality')}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Criticality (1-3)</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableHead>
+                              <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                <div className="flex items-center gap-1">
+                                  Task {getSortIcon('task')}
+                                </div>
+                              </TableHead>
                               <TableHead className="w-[60px] px-0.5">Today</TableHead>
-                              <TableHead className="w-[140px] px-0.5 text-right">Actions</TableHead>
+                              <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -878,14 +909,57 @@ export default function Home() {
                     {isArchiveOpen && (
                       <CardContent className="py-2">
                         <div className="overflow-x-auto">
-                          <Table>
+                          <Table className="table-fixed w-full">
                             <TableHeader>
                               <TableRow>
+                                <TableHead className="w-[25px] px-0.5"></TableHead>
+                                <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger className="w-full h-full flex items-center justify-center">
+                                        {getSortIcon('priority')}
+                                      </TooltipTrigger>
+                                      <TooltipContent>Overall Priority</TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </TableHead>
+                                <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                  <div className="flex items-center gap-1">
+                                    Category {getSortIcon('category')}
+                                  </div>
+                                </TableHead>
+                                <TableHead className="w-[100px] px-0.5">Status</TableHead>
+                                <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <div className="flex items-center justify-center gap-1">
+                                          E {getSortIcon('effort')}
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Effort (1-10)</TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </TableHead>
+                                <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <div className="flex items-center justify-center gap-1">
+                                          C {getSortIcon('criticality')}
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Criticality (1-3)</TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </TableHead>
+                                <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                  <div className="flex items-center gap-1">
+                                    Task {getSortIcon('task')}
+                                  </div>
+                                </TableHead>
                                 <TableHead className="w-[60px] px-0.5">Today</TableHead>
-                                <TableHead>Task</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="w-[100px] px-0.5 text-right">Actions</TableHead>
+                                <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -897,14 +971,13 @@ export default function Home() {
                                   isFirst={true} isLast={true} // Move buttons disabled
                                   isDraggable={false}
                                   handleTaskUpdate={handleTaskUpdate}
+                                  handlePriorityChange={handlePriorityChange}
+                                  handleAddTask={() => handleAddTask(task.id)}
+                                  handleDuplicateTask={() => handleDuplicateTask(task.id)}
                                   handleDeleteTask={() => handleDeleteTask(task.id)}
-                                  focusCell={() => {}}
-                                  // Pass dummy handlers for unused actions
-                                  handlePriorityChange={() => {}}
-                                  handleAddTask={() => {}}
-                                  handleDuplicateTask={() => {}}
                                   handleMoveTaskUp={() => {}}
                                   handleMoveTaskDown={() => {}}
+                                  focusCell={() => {}}
                                 />
                               ))}
                             </TableBody>
