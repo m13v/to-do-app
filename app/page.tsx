@@ -247,6 +247,9 @@ export default function Home() {
       });
 
       if (!response.ok) {
+        if (response.status === 504) {
+          throw new Error("The request timed out as it was taking too long to process. This can happen with very large task lists. Please try filtering your tasks to reduce the size of the request.");
+        }
         const errorData = await response.json();
         const errorMessage = errorData.error || 'Failed to get response from AI';
         const errorDetails = errorData.details ? `\n\nDetails: ${errorData.details}` : '';

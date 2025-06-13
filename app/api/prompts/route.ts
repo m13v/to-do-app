@@ -24,7 +24,8 @@ export async function GET() {
       if (process.env.NODE_ENV === 'development') {
         console.error('Supabase error fetching prompts:', error);
       }
-      return NextResponse.json({ error: 'Failed to fetch prompts' }, { status: 500 });
+      const errorMessage = process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch prompts';
+      return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 
     return NextResponse.json(data || []);
@@ -32,7 +33,8 @@ export async function GET() {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error fetching prompts:', error);
     }
-    return NextResponse.json({ error: 'Failed to fetch prompts' }, { status: 500 });
+    const errorMessage = error instanceof Error && process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch prompts';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -54,7 +56,8 @@ export async function POST(request: Request) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Supabase error deleting old prompts:', deleteError);
       }
-      return NextResponse.json({ error: 'Failed to save prompts' }, { status: 500 });
+      const errorMessage = process.env.NODE_ENV === 'development' ? deleteError.message : 'Failed to save prompts';
+      return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
     
     const promptsToInsert = prompts.map((p: { title: string; prompt: string }) => ({
@@ -72,7 +75,8 @@ export async function POST(request: Request) {
         if (process.env.NODE_ENV === 'development') {
           console.error('Supabase error inserting new prompts:', insertError);
         }
-        return NextResponse.json({ error: 'Failed to save prompts' }, { status: 500 });
+        const errorMessage = process.env.NODE_ENV === 'development' ? insertError.message : 'Failed to save prompts';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
       }
     }
 
@@ -81,6 +85,7 @@ export async function POST(request: Request) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error saving prompts:', error);
     }
-    return NextResponse.json({ error: 'Failed to save prompts' }, { status: 500 });
+    const errorMessage = error instanceof Error && process.env.NODE_ENV === 'development' ? error.message : 'Failed to save prompts';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 } 
