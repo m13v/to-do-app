@@ -22,7 +22,8 @@ interface TaskRowProps {
   index: number;
   isFirst: boolean;
   isLast: boolean;
-  handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => void;
+  handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'>, value: string | boolean) => void;
+  handlePriorityChange: (id: string, priority: number) => void;
   handleAddTask: (id: string) => void;
   handleDuplicateTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
@@ -37,6 +38,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   isFirst,
   isLast,
   handleTaskUpdate,
+  handlePriorityChange,
   handleAddTask,
   handleDuplicateTask,
   handleDeleteTask,
@@ -108,7 +110,19 @@ const TaskRow: React.FC<TaskRowProps> = ({
             <GripVertical className="h-4 w-4" />
           </TableCell>
           <TableCell className="py-1 px-1">
-            {index + 1}
+            <Input
+              type="number"
+              value={editedTask.priority}
+              onChange={(e) => {
+                setEditedTask(prev => ({ ...prev, priority: parseInt(e.target.value, 10) || 0 }));
+              }}
+              onBlur={() => {
+                if (editedTask.priority !== task.priority) {
+                  handlePriorityChange(task.id, editedTask.priority);
+                }
+              }}
+              className="h-7 w-12 py-0 text-center"
+            />
           </TableCell>
           <TableCell className="font-medium py-1 px-1">
             <Input

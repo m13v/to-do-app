@@ -24,21 +24,21 @@ import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/n
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner"
 
-type SortField = 'id' | 'category' | 'task' | 'effort' | 'criticality';
+type SortField = 'priority' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
 
-const defaultTasksMarkdown = `| Category | Task | Status | Done | Effort | Criticality |
-|---|---|---|---|---|---|
-| Welcome | Welcome to your new task manager! | to_do | | 5 | 2 |
-| Welcome | Click on any task text to edit it. | to_do | | 1 | 1 |
-| Welcome | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | | 1 | 1 |
-| Welcome | Drag and drop tasks to reorder them. | to_do | | 2 | 1 |
-| Welcome | Use the search bar to filter your tasks. | to_do | | 1 | 1 |
-| Welcome | Click on the column headers to sort your list. | to_do | | 1 | 1 |
-| Welcome | Set effort from 1-10 to estimate task size. | to_do | | 1 | 2 |
-| Welcome | Set criticality from 1-3 to prioritize important work. | to_do | | 1 | 2 |
-| Welcome | Use the AI Assistant to manage your tasks with natural language. | to_do | | 3 | 3 |
-| Welcome | Delete these welcome tasks when you're ready to start. | to_do | | 1 | 1 |
+const defaultTasksMarkdown = `| P | Category | Task | Status | Done | Effort | Criticality |
+|---|---|---|---|---|---|---|
+| 1 | Welcome | Welcome to your new task manager! | to_do | | 5 | 2 |
+| 2 | Welcome | Click on any task text to edit it. | to_do | | 1 | 1 |
+| 3 | Welcome | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | | 1 | 1 |
+| 4 | Welcome | Drag and drop tasks to reorder them. | to_do | | 2 | 1 |
+| 5 | Welcome | Use the search bar to filter your tasks. | to_do | | 1 | 1 |
+| 6 | Welcome | Click on the column headers to sort your list. | to_do | | 1 | 1 |
+| 7 | Welcome | Set effort from 1-10 to estimate task size. | to_do | | 1 | 2 |
+| 8 | Welcome | Set criticality from 1-3 to prioritize important work. | to_do | | 1 | 2 |
+| 9 | Welcome | Use the AI Assistant to manage your tasks with natural language. | to_do | | 3 | 3 |
+| 10 | Welcome | Delete these welcome tasks when you're ready to start. | to_do | | 1 | 1 |
 `;
 
 const systemPrompt = `You are an AI assistant helping to manage a todo list. The user will provide a markdown table and a prompt.
@@ -66,7 +66,7 @@ export default function Home() {
   const [history, setHistory] = useState<Task[][]>([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('id');
+  const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
   const [countdown, setCountdown] = useState(180);
@@ -384,11 +384,27 @@ export default function Home() {
     updateAndSaveTasks([...updatedActive, ...updatedDone]);
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
   
+  const handlePriorityChange = (taskId: string, newPriority: number) => {
+    const updatedTasks = allTasks.map(task => 
+      task.id === taskId ? { ...task, priority: newPriority } : task
+    );
+
+    if (sortField === 'priority') {
+      updatedTasks.sort((a, b) => {
+        const comparison = a.priority - b.priority;
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+    
+    updateAndSaveTasks(updatedTasks);
+  };
+
   const handleAddTask = useCallback((afterId: string) => {
     const newTasks = [...activeTasks];
     const afterIndex = newTasks.findIndex(t => t.id === afterId);
     const category = newTasks[afterIndex]?.category || 'NEW';
-    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, category, task: '', status: 'to_do', effort: '5', criticality: '2' };
+    const newPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0) + 1;
+    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, task: '', status: 'to_do', effort: '5', criticality: '2' };
     const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
@@ -445,18 +461,13 @@ export default function Home() {
   ), [activeTasks, searchQuery]);
 
   const sortedActiveTasks = useMemo(() => {
-    if (sortField === 'id' && sortDirection === 'asc') {
-      return filteredActiveTasks;
-    }
-    
     const sortableTasks = [...filteredActiveTasks];
-    const taskIndexMap = new Map(activeTasks.map((task, index) => [task.id, index]));
-
+    
     sortableTasks.sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
-        case 'id':
-          comparison = (taskIndexMap.get(a.id) ?? 0) - (taskIndexMap.get(b.id) ?? 0);
+        case 'priority':
+          comparison = a.priority - b.priority;
           break;
         case 'category':
           comparison = a.category.localeCompare(b.category);
@@ -475,7 +486,7 @@ export default function Home() {
     });
 
     return sortableTasks;
-  }, [filteredActiveTasks, sortField, sortDirection, activeTasks]);
+  }, [filteredActiveTasks, sortField, sortDirection]);
 
 
   const getSortIcon = useCallback((field: SortField) => {
@@ -707,10 +718,17 @@ export default function Home() {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-[25px] px-1"></TableHead>
-                            <TableHead className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('id')}>
-                              <div className="flex items-center gap-1">
-                                # {getSortIcon('id')}
-                              </div>
+                            <TableHead className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <div className="flex items-center gap-1">
+                                      P {getSortIcon('priority')}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Overall Priority</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </TableHead>
                             <TableHead className="w-[150px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
                               <div className="flex items-center gap-1">
@@ -762,6 +780,7 @@ export default function Home() {
                                   isFirst={index === 0}
                                   isLast={index === sortedActiveTasks.length - 1}
                                   handleTaskUpdate={handleTaskUpdate}
+                                  handlePriorityChange={handlePriorityChange}
                                   handleAddTask={() => handleAddTask(task.id)}
                                   handleDuplicateTask={() => handleDuplicateTask(task.id)}
                                   handleDeleteTask={() => handleDeleteTask(task.id)}
@@ -813,6 +832,7 @@ export default function Home() {
                                   handleDeleteTask={() => handleDeleteTask(task.id)}
                                   focusCell={() => {}}
                                   // Pass dummy handlers for unused actions
+                                  handlePriorityChange={() => {}}
                                   handleAddTask={() => {}}
                                   handleDuplicateTask={() => {}}
                                   handleMoveTaskUp={() => {}}
