@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
     const generationConfig = {
       temperature: 0.2,
       responseMimeType: "application/json",
-      responseSchema: markdownTableSchema
+      responseSchema: markdownTableSchema,
+      maxOutputTokens: 64000,
     };
     
     const chat = model.startChat({

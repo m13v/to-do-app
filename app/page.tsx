@@ -69,7 +69,7 @@ export default function Home() {
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(120);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportableMarkdown, setExportableMarkdown] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -196,7 +196,7 @@ export default function Home() {
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (processingAI) {
-      setCountdown(60); // Reset countdown
+      setCountdown(120); // Reset countdown
       timer = setInterval(() => {
         setCountdown((prevCountdown) => {
           if (prevCountdown > 1) {
