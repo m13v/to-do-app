@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -56,6 +56,7 @@ export default function Home() {
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
 
@@ -381,6 +382,28 @@ Your response will be parsed by the application, so it's critical to maintain th
   // Filter for today tasks
   const todayTasks = useMemo(() => activeTasks.filter(t => t.today), [activeTasks]);
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      if (content) {
+        const importedTasks = parseMarkdownTable(content);
+        setActiveTasks(importedTasks.filter(t => t.status !== 'done'));
+        setDoneTasks(importedTasks.filter(t => t.status === 'done'));
+        saveTasks(importedTasks);
+        alert(`${importedTasks.length} tasks imported successfully.`);
+      }
+    };
+    reader.readAsText(file);
+    // Reset file input to allow re-uploading the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b">
@@ -450,6 +473,20 @@ Your response will be parsed by the application, so it's critical to maintain th
                 </div>
                 <Button onClick={() => saveTasks(allTasks)} variant="outline" size="sm" disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".md, .markdown, .txt"
+                  className="hidden"
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                  size="sm"
+                >
+                  Import
                 </Button>
                 <Button
                   onClick={() => {
