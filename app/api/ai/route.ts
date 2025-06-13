@@ -25,9 +25,11 @@ const safetySettings: Array<{category: HarmCategory, threshold: HarmBlockThresho
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log("Received request body:", body);
     const { systemPrompt, userPrompt } = body;
     
     if (!systemPrompt || !userPrompt) {
+      console.error("Missing systemPrompt or userPrompt in request body");
       return NextResponse.json({ error: 'Both systemPrompt and userPrompt are required.' }, { status: 400 });
     }
     
@@ -63,11 +65,23 @@ export async function POST(request: NextRequest) {
     const result = await chat.sendMessage(userPrompt);
     const response = result.response;
 
+    console.log("Full AI response object:", JSON.stringify(response, null, 2));
+
+    if (response.promptFeedback && response.promptFeedback.blockReason) {
+      throw new Error(`Request was blocked. Reason: ${response.promptFeedback.blockReason}`);
+    }
+
     if (response?.candidates?.[0]?.content?.parts?.[0]?.text) {
       const jsonString = response.candidates[0].content.parts[0].text;
-      const parsedJson = JSON.parse(jsonString);
-      // We return the content of the markdown_table property, not the whole JSON object
-      return NextResponse.json({ content: parsedJson.markdown_table });
+      
+      try {
+        const parsedJson = JSON.parse(jsonString);
+        // We return the content of the markdown_table property, not the whole JSON object
+        return NextResponse.json({ content: parsedJson.markdown_table });
+      } catch {
+        console.error("Failed to parse AI JSON response. String was:", jsonString);
+        throw new Error("AI returned a response that was not valid JSON.");
+      }
     }
     
     throw new Error('Failed to get a valid response structure from the AI.');

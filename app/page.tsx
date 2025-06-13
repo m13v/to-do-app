@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table';
-import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Undo, Redo } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task } from '@/lib/markdown-parser';
 import TaskRow from '@/components/TaskRow';
@@ -26,8 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 type SortField = 'id' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
 
-const defaultTasksMarkdown = `# Task Categories Table
-| Category | Task | Status | Done | Effort | Criticality |
+const defaultTasksMarkdown = `| Category | Task | Status | Done | Effort | Criticality |
 |---|---|---|---|---|---|
 | Welcome | Welcome to your new task manager! | to_do | | 5 | 2 |
 | Welcome | Click on any task text to edit it. | to_do | | 1 | 1 |
@@ -62,14 +61,23 @@ export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [processingAI, setProcessingAI] = useState(false);
   const [aiGeneratedContent, setAiGeneratedContent] = useState<string | null>(null);
-  const [lastGoodState, setLastGoodState] = useState<Task[] | null>(null);
+  const [tasksSentToAI, setTasksSentToAI] = useState<Task[] | null>(null);
+  const [history, setHistory] = useState<Task[][]>([[]]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportableMarkdown, setExportableMarkdown] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
+  const filteredAllTasks = useMemo(() => allTasks.filter(task => 
+    task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    task.task.toLowerCase().includes(searchQuery.toLowerCase())
+  ), [allTasks, searchQuery]);
 
   const saveTasks = useCallback(async (tasksToSave: Task[]): Promise<boolean> => {
     setSaving(true);
@@ -103,6 +111,24 @@ export default function Home() {
       setSaving(false);
     }
   }, []);
+
+  const updateAndSaveTasks = useCallback((newTasks: Task[], shouldRecordHistory: boolean = true) => {
+    if (shouldRecordHistory) {
+        const newHistorySlice = history.slice(0, historyIndex + 1);
+        const updatedHistory = [...newHistorySlice, newTasks];
+        // Limit history to 20 undo steps + current state
+        if (updatedHistory.length > 21) {
+            updatedHistory.shift();
+        }
+        setHistory(updatedHistory);
+        setHistoryIndex(updatedHistory.length - 1);
+    }
+
+    setActiveTasks(newTasks.filter(t => t.status !== 'done'));
+    setDoneTasks(newTasks.filter(t => t.status === 'done'));
+
+    saveTasks(newTasks);
+  }, [history, historyIndex, saveTasks]);
 
   const retrySync = useCallback(async () => {
     setSyncError(false);
@@ -155,6 +181,8 @@ export default function Home() {
     
     setActiveTasks(loadedTasks.filter(t => t.status !== 'done'));
     setDoneTasks(loadedTasks.filter(t => t.status === 'done'));
+    setHistory([loadedTasks]);
+    setHistoryIndex(0);
     setLoading(false);
   }, [user, saveTasks]);
 
@@ -163,6 +191,25 @@ export default function Home() {
       loadTasks();
     }
   }, [user, loadTasks]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (processingAI) {
+      setCountdown(60); // Reset countdown
+      timer = setInterval(() => {
+        setCountdown((prevCountdown) => {
+          if (prevCountdown > 1) {
+            return prevCountdown - 1;
+          }
+          clearInterval(timer);
+          return 0;
+        });
+      }, 1000);
+    }
+    return () => {
+      clearInterval(timer);
+    };
+  }, [processingAI]);
 
   useEffect(() => {
     if (loading || !user || syncError) return;
@@ -179,8 +226,14 @@ export default function Home() {
       return;
     }
 
+    const tasksForAI = searchQuery.trim() ? filteredAllTasks : allTasks;
+    if (tasksForAI.length === 0) {
+      alert("Your filter returned no tasks. Please adjust your filter or clear it before using the AI assistant.");
+      return;
+    }
+
     setProcessingAI(true);
-    setLastGoodState(allTasks);
+    setTasksSentToAI(tasksForAI);
 
     try {
       const response = await fetch('/api/ai', {
@@ -188,7 +241,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemPrompt,
-          userPrompt: `${prompt}\n\n${tasksToMarkdown(allTasks)}`,
+          userPrompt: `${prompt}\n\n${tasksToMarkdown(tasksForAI)}`,
         }),
       });
 
@@ -214,30 +267,49 @@ export default function Home() {
     } finally {
       setProcessingAI(false);
     }
-  }, [prompt, allTasks]);
+  }, [prompt, allTasks, filteredAllTasks, searchQuery]);
 
   const handleConfirmAIChanges = () => {
-    if (aiGeneratedContent) {
+    if (aiGeneratedContent && tasksSentToAI) {
       const parsedTasks = parseMarkdownTable(aiGeneratedContent);
-      setActiveTasks(parsedTasks.filter(t => t.status !== 'done'));
-      setDoneTasks(parsedTasks.filter(t => t.status === 'done'));
-      saveTasks(parsedTasks);
+      
+      const taskIdsSentToAI = new Set(tasksSentToAI.map(t => t.id));
+      const tasksToKeep = allTasks.filter(t => !taskIdsSentToAI.has(t.id));
+
+      const finalTasks = [...tasksToKeep, ...parsedTasks];
+
+      updateAndSaveTasks(finalTasks);
       setAiGeneratedContent(null);
+      setTasksSentToAI(null);
     }
   };
 
   const handleCancelAIChanges = () => {
     setAiGeneratedContent(null);
+    setTasksSentToAI(null);
   };
   
-  const handleRevert = () => {
-    if (lastGoodState) {
-      setActiveTasks(lastGoodState.filter(t => t.status !== 'done'));
-      setDoneTasks(lastGoodState.filter(t => t.status === 'done'));
-      saveTasks(lastGoodState);
-      setLastGoodState(null);
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      const previousTasks = history[newIndex];
+      setActiveTasks(previousTasks.filter(t => t.status !== 'done'));
+      setDoneTasks(previousTasks.filter(t => t.status === 'done'));
+      saveTasks(previousTasks);
     }
-  };
+  }, [history, historyIndex, saveTasks]);
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      const nextTasks = history[newIndex];
+      setActiveTasks(nextTasks.filter(t => t.status !== 'done'));
+      setDoneTasks(nextTasks.filter(t => t.status === 'done'));
+      saveTasks(nextTasks);
+    }
+  }, [history, historyIndex, saveTasks]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || result.destination.index === result.source.index) {
@@ -256,8 +328,7 @@ export default function Home() {
     
     newTasks.splice(destinationIndex, 0, movedItem);
 
-    setActiveTasks(newTasks);
-    saveTasks([...newTasks, ...doneTasks]);
+    updateAndSaveTasks([...newTasks, ...doneTasks]);
   };
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
@@ -296,10 +367,8 @@ export default function Home() {
       }
     }
     
-    setActiveTasks(updatedActive);
-    setDoneTasks(updatedDone);
-    saveTasks([...updatedActive, ...updatedDone]);
-  }, [activeTasks, doneTasks, saveTasks]);
+    updateAndSaveTasks([...updatedActive, ...updatedDone]);
+  }, [activeTasks, doneTasks, updateAndSaveTasks]);
   
   const handleAddTask = useCallback((afterId: string) => {
     const newTasks = [...activeTasks];
@@ -307,17 +376,14 @@ export default function Home() {
     const category = newTasks[afterIndex]?.category || 'NEW';
     const newTask: Task = { id: `${Date.now()}-${Math.random()}`, category, task: '', status: 'to_do', effort: '5', criticality: '2' };
     const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
-    setActiveTasks(updatedTasks);
-    saveTasks([...updatedTasks, ...doneTasks]);
-  }, [activeTasks, doneTasks, saveTasks]);
+    updateAndSaveTasks([...updatedTasks, ...doneTasks]);
+  }, [activeTasks, doneTasks, updateAndSaveTasks]);
 
   const handleDeleteTask = useCallback((id: string) => {
     const updatedActive = activeTasks.filter(t => t.id !== id);
     const updatedDone = doneTasks.filter(t => t.id !== id);
-    setActiveTasks(updatedActive);
-    setDoneTasks(updatedDone);
-    saveTasks([...updatedActive, ...updatedDone]);
-  }, [activeTasks, doneTasks, saveTasks]);
+    updateAndSaveTasks([...updatedActive, ...updatedDone]);
+  }, [activeTasks, doneTasks, updateAndSaveTasks]);
 
   const handleDuplicateTask = useCallback((id: string) => {
     const newTasks = [...activeTasks];
@@ -326,10 +392,9 @@ export default function Home() {
       const index = newTasks.findIndex(t => t.id === id);
       const duplicatedTask: Task = { ...taskToDuplicate, id: `${Date.now()}-${Math.random()}` };
       const updatedTasks = insertTaskAt(newTasks, index + 1, duplicatedTask);
-      setActiveTasks(updatedTasks);
-      saveTasks([...updatedTasks, ...doneTasks]);
+      updateAndSaveTasks([...updatedTasks, ...doneTasks]);
     }
-  }, [activeTasks, doneTasks, saveTasks]);
+  }, [activeTasks, doneTasks, updateAndSaveTasks]);
 
   const handleMoveTaskUp = useCallback((taskId: string) => {
     const index = activeTasks.findIndex(t => t.id === taskId);
@@ -337,10 +402,9 @@ export default function Home() {
       const newTasks = [...activeTasks];
       const [movedTask] = newTasks.splice(index, 1);
       newTasks.splice(index - 1, 0, movedTask);
-      setActiveTasks(newTasks);
-      saveTasks([...newTasks, ...doneTasks]);
+      updateAndSaveTasks([...newTasks, ...doneTasks]);
     }
-  }, [activeTasks, doneTasks, saveTasks]);
+  }, [activeTasks, doneTasks, updateAndSaveTasks]);
 
   const handleMoveTaskDown = useCallback((taskId: string) => {
     const index = activeTasks.findIndex(t => t.id === taskId);
@@ -348,10 +412,9 @@ export default function Home() {
       const newTasks = [...activeTasks];
       const [movedTask] = newTasks.splice(index, 1);
       newTasks.splice(index + 1, 0, movedTask);
-      setActiveTasks(newTasks);
-      saveTasks([...newTasks, ...doneTasks]);
+      updateAndSaveTasks([...newTasks, ...doneTasks]);
     }
-  }, [activeTasks, doneTasks, saveTasks]);
+  }, [activeTasks, doneTasks, updateAndSaveTasks]);
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
@@ -418,9 +481,7 @@ export default function Home() {
       const content = e.target?.result as string;
       if (content) {
         const importedTasks = parseMarkdownTable(content);
-        setActiveTasks(importedTasks.filter(t => t.status !== 'done'));
-        setDoneTasks(importedTasks.filter(t => t.status === 'done'));
-        saveTasks(importedTasks);
+        updateAndSaveTasks(importedTasks);
         alert(`${importedTasks.length} tasks imported successfully.`);
       }
     };
@@ -438,12 +499,10 @@ export default function Home() {
     if (lastVisitDate !== today) {
       console.log("New day detected. Resetting 'Today' tasks.");
       const resetTasks = allTasks.map(task => ({ ...task, today: false }));
-      setActiveTasks(resetTasks.filter(t => t.status !== 'done'));
-      setDoneTasks(resetTasks.filter(t => t.status === 'done'));
-      saveTasks(resetTasks);
+      updateAndSaveTasks(resetTasks);
       localStorage.setItem('lastVisitDate', today);
     }
-  }, [allTasks, saveTasks]);
+  }, [allTasks, updateAndSaveTasks]);
 
   useEffect(() => {
     if (!loading) {
@@ -543,26 +602,34 @@ export default function Home() {
                 <Button
                   onClick={() => {
                     const markdown = tasksToMarkdown(allTasks);
-                    const blob = new Blob([markdown], { type: 'text/markdown' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `tasks-${new Date().toISOString().split('T')[0]}.md`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+                    setExportableMarkdown(markdown);
+                    setIsExportModalOpen(true);
                   }}
                   variant="outline"
                   size="sm"
                 >
                   Export
                 </Button>
-                {lastGoodState && (
-                  <Button onClick={handleRevert} variant="outline" size="sm">
-                    Revert Last Change
-                  </Button>
-                )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={handleUndo} variant="outline" size="sm" disabled={historyIndex === 0}>
+                        <Undo className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Undo</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={handleRedo} variant="outline" size="sm" disabled={historyIndex >= history.length - 1}>
+                        <Redo className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Redo</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <div className="text-sm text-gray-500">
                   {filteredActiveTasks.length} of {activeTasks.length} tasks
                 </div>
@@ -772,7 +839,7 @@ export default function Home() {
         </a>
       </footer>
 
-      <Dialog open={!!aiGeneratedContent} onOpenChange={(isOpen) => !isOpen && setAiGeneratedContent(null)}>
+      <Dialog open={!!aiGeneratedContent} onOpenChange={(isOpen) => !isOpen && handleCancelAIChanges()}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Confirm AI Changes</DialogTitle>
@@ -783,7 +850,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
             <div>
               <h3 className="font-bold mb-2">Current</h3>
-              <pre className="text-xs p-2 bg-gray-100 rounded">{tasksToMarkdown(allTasks)}</pre>
+              <pre className="text-xs p-2 bg-gray-100 rounded">{tasksSentToAI ? tasksToMarkdown(tasksSentToAI) : ''}</pre>
             </div>
             <div>
               <h3 className="font-bold mb-2">Proposed</h3>
@@ -794,6 +861,55 @@ export default function Home() {
             <Button variant="ghost" onClick={handleCancelAIChanges}>Cancel</Button>
             <Button onClick={handleConfirmAIChanges}>Confirm and Save</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Export Tasks</DialogTitle>
+            <DialogDescription>
+              You can edit the markdown content below before downloading.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={exportableMarkdown}
+            onChange={(e) => setExportableMarkdown(e.target.value)}
+            className="min-h-[400px] font-mono text-xs"
+            />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsExportModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              const blob = new Blob([exportableMarkdown], { type: 'text/markdown' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `tasks-${new Date().toISOString().split('T')[0]}.md`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              setIsExportModalOpen(false);
+            }}>Download</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={processingAI}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>AI Assistant is thinking...</DialogTitle>
+            <DialogDescription>
+              Please wait while the AI processes your request.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center p-6">
+            <Loader2 className="h-16 w-16 animate-spin text-purple-600" />
+            <p className="mt-4 text-lg font-semibold">
+              Time remaining: {countdown} seconds
+            </p>
+            {countdown === 0 && <p className="text-sm text-gray-500 mt-2">The AI is taking longer than usual. Please be patient.</p>}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
