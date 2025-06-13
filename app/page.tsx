@@ -714,6 +714,7 @@ export default function Home() {
                                 index={idx}
                                 isFirst={idx === 0}
                                 isLast={idx === todayTasks.length - 1}
+                                isDraggable={false}
                                 handleTaskUpdate={handleTaskUpdate}
                                 handlePriorityChange={handlePriorityChange}
                                 handleAddTask={() => handleAddTask(task.id)}
@@ -894,6 +895,7 @@ export default function Home() {
                                   task={task}
                                   index={index}
                                   isFirst={true} isLast={true} // Move buttons disabled
+                                  isDraggable={false}
                                   handleTaskUpdate={handleTaskUpdate}
                                   handleDeleteTask={() => handleDeleteTask(task.id)}
                                   focusCell={() => {}}
