@@ -25,6 +25,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner"
 import { generateDiff } from '@/lib/diff';
 import AnimatedTitle from '@/components/AnimatedTitle';
+import { useMediaQuery } from '@/lib/hooks/use-media-query';
+import MobileTaskCard from '@/components/MobileTaskCard';
 
 type SortField = 'priority' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
@@ -76,6 +78,7 @@ export default function Home() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportableMarkdown, setExportableMarkdown] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
   const filteredAllTasks = useMemo(() => allTasks.filter(task => 
@@ -607,7 +610,7 @@ export default function Home() {
 
               <QuickPrompts onPromptSelect={setPrompt} />
 
-              <div className="mb-3 flex items-center gap-2">
+              <div className="mb-3 flex flex-col md:flex-row items-stretch md:items-center gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -618,55 +621,57 @@ export default function Home() {
                     className="pl-8 h-9"
                   />
                 </div>
-                <Button onClick={() => saveTasks(allTasks)} variant="outline" size="sm" disabled={saving}>
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
-                </Button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept=".md, .markdown, .txt"
-                  className="hidden"
-                />
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  variant="outline"
-                  size="sm"
-                >
-                  Import
-                </Button>
-                <Button
-                  onClick={() => {
-                    const markdown = tasksToMarkdown(allTasks);
-                    setExportableMarkdown(markdown);
-                    setIsExportModalOpen(true);
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Export
-                </Button>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button onClick={handleUndo} variant="outline" size="sm" disabled={historyIndex === 0}>
-                        <Undo className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Undo</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button onClick={handleRedo} variant="outline" size="sm" disabled={historyIndex >= history.length - 1}>
-                        <Redo className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Redo</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <div className="text-sm text-gray-500">
+                <div className="flex items-center gap-2 justify-end">
+                  <Button onClick={() => saveTasks(allTasks)} variant="outline" size="sm" disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept=".md, .markdown, .txt"
+                    className="hidden"
+                  />
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Import
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const markdown = tasksToMarkdown(allTasks);
+                      setExportableMarkdown(markdown);
+                      setIsExportModalOpen(true);
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Export
+                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button onClick={handleUndo} variant="outline" size="sm" disabled={historyIndex === 0}>
+                          <Undo className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Undo</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button onClick={handleRedo} variant="outline" size="sm" disabled={historyIndex >= history.length - 1}>
+                          <Redo className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Redo</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="text-sm text-gray-500 text-right md:text-left mt-2 md:mt-0">
                   {filteredActiveTasks.length} of {activeTasks.length} tasks
                 </div>
               </div>
@@ -723,88 +728,107 @@ export default function Home() {
                   <CardTitle className="text-sm">Task Categories ({filteredActiveTasks.length} tasks)</CardTitle>
                 </CardHeader>
                 <CardContent className="py-2">
-                  <div className="overflow-x-auto">
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                      <Table className="table-fixed w-full">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[25px] px-0.5"></TableHead>
-                            <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
-                               <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger className="w-full h-full flex items-center justify-center">
-                                    {getSortIcon('priority')}
-                                  </TooltipTrigger>
-                                  <TooltipContent>Overall Priority</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </TableHead>
-                            <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
-                              <div className="flex items-center gap-1">
-                                Category {getSortIcon('category')}
-                              </div>
-                            </TableHead>
-                            <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                            <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <div className="flex items-center justify-center gap-1">
-                                      E {getSortIcon('effort')}
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Effort (1-10)</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </TableHead>
-                            <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <div className="flex items-center justify-center gap-1">
-                                      C {getSortIcon('criticality')}
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Criticality (1-3)</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </TableHead>
-                            <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
-                              <div className="flex items-center gap-1">
-                                Task {getSortIcon('task')}
-                              </div>
-                            </TableHead>
-                            <TableHead className="w-[60px] px-0.5">Today</TableHead>
-                            <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <Droppable droppableId="tasks">
-                          {(provided) => (
-                            <TableBody ref={provided.innerRef} {...provided.droppableProps}>
-                              {sortedActiveTasks.map((task, index) => (
-                                <TaskRow
-                                  key={task.id}
-                                  task={task}
-                                  index={index}
-                                  isFirst={index === 0}
-                                  isLast={index === sortedActiveTasks.length - 1}
-                                  handleTaskUpdate={handleTaskUpdate}
-                                  handlePriorityChange={handlePriorityChange}
-                                  handleAddTask={() => handleAddTask(task.id)}
-                                  handleDuplicateTask={() => handleDuplicateTask(task.id)}
-                                  handleDeleteTask={() => handleDeleteTask(task.id)}
-                                  handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
-                                  handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
-                                  focusCell={focusCell}
-                                />
-                              ))}
-                              {provided.placeholder}
-                            </TableBody>
-                          )}
-                        </Droppable>
-                      </Table>
-                    </DragDropContext>
-                  </div>
+                  {isDesktop ? (
+                    <div className="overflow-x-auto">
+                      <DragDropContext onDragEnd={handleDragEnd}>
+                        <Table className="table-fixed w-full">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[25px] px-0.5"></TableHead>
+                              <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                 <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger className="w-full h-full flex items-center justify-center">
+                                      {getSortIcon('priority')}
+                                    </TooltipTrigger>
+                                    <TooltipContent>Overall Priority</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableHead>
+                              <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                <div className="flex items-center gap-1">
+                                  Category {getSortIcon('category')}
+                                </div>
+                              </TableHead>
+                              <TableHead className="w-[100px] px-0.5">Status</TableHead>
+                              <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <div className="flex items-center justify-center gap-1">
+                                        E {getSortIcon('effort')}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Effort (1-10)</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableHead>
+                              <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <div className="flex items-center justify-center gap-1">
+                                        C {getSortIcon('criticality')}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Criticality (1-3)</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableHead>
+                              <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                <div className="flex items-center gap-1">
+                                  Task {getSortIcon('task')}
+                                </div>
+                              </TableHead>
+                              <TableHead className="w-[60px] px-0.5">Today</TableHead>
+                              <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <Droppable droppableId="tasks">
+                            {(provided) => (
+                              <TableBody ref={provided.innerRef} {...provided.droppableProps}>
+                                {sortedActiveTasks.map((task, index) => (
+                                  <TaskRow
+                                    key={task.id}
+                                    task={task}
+                                    index={index}
+                                    isFirst={index === 0}
+                                    isLast={index === sortedActiveTasks.length - 1}
+                                    handleTaskUpdate={handleTaskUpdate}
+                                    handlePriorityChange={handlePriorityChange}
+                                    handleAddTask={() => handleAddTask(task.id)}
+                                    handleDuplicateTask={() => handleDuplicateTask(task.id)}
+                                    handleDeleteTask={() => handleDeleteTask(task.id)}
+                                    handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
+                                    handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
+                                    focusCell={focusCell}
+                                  />
+                                ))}
+                                {provided.placeholder}
+                              </TableBody>
+                            )}
+                          </Droppable>
+                        </Table>
+                      </DragDropContext>
+                    </div>
+                  ) : (
+                    <div>
+                      {sortedActiveTasks.map((task, index) => (
+                        <MobileTaskCard
+                          key={task.id}
+                          task={task}
+                          isFirst={index === 0}
+                          isLast={index === sortedActiveTasks.length - 1}
+                          onUpdate={handleTaskUpdate}
+                          onDelete={handleDeleteTask}
+                          onAdd={() => handleAddTask(task.id)}
+                          onDuplicate={() => handleDuplicateTask(task.id)}
+                          onMoveUp={() => handleMoveTaskUp(task.id)}
+                          onMoveDown={() => handleMoveTaskDown(task.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
