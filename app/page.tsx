@@ -275,11 +275,16 @@ Your response will be parsed by the application, so it's critical to maintain th
     saveTasks(newTasks);
   }, [tasks, saveTasks]);
   
-  const handleAddTask = useCallback(() => {
-    const newTasks = insertTaskAt(tasks, tasks.length, { id: `${Date.now()}-${Math.random()}`, category: 'NEW', task: '', status: 'to_do', effort: '5', criticality: '2' });
-    setTasks(newTasks);
-    saveTasks(newTasks);
-  }, [tasks, saveTasks]);
+  const handleAddTask = useCallback((afterId: string) => {
+    setTasks(currentTasks => {
+      const afterIndex = currentTasks.findIndex(t => t.id === afterId);
+      const category = currentTasks[afterIndex]?.category || 'NEW';
+      const newTask: Task = { id: `${Date.now()}-${Math.random()}`, category, task: '', status: 'to_do', effort: '5', criticality: '2' };
+      const newTasks = insertTaskAt(currentTasks, afterIndex + 1, newTask);
+      saveTasks(newTasks);
+      return newTasks;
+    });
+  }, [saveTasks]);
 
   const handleDeleteTask = useCallback((id: string) => {
     const newTasks = tasks.filter(task => task.id !== id);
@@ -425,6 +430,24 @@ Your response will be parsed by the application, so it's critical to maintain th
                 <Button onClick={() => saveTasks(tasks)} variant="outline" size="sm" disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
                 </Button>
+                <Button
+                  onClick={() => {
+                    const markdown = tasksToMarkdown(tasks);
+                    const blob = new Blob([markdown], { type: 'text/markdown' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `tasks-${new Date().toISOString().split('T')[0]}.md`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Export
+                </Button>
                 {lastGoodState && (
                   <Button onClick={handleRevert} variant="outline" size="sm">
                     Revert Last Change
@@ -545,8 +568,8 @@ Your response will be parsed by the application, so it's critical to maintain th
                                   key={task.id}
                                   task={task}
                                   index={index}
-                                  handleTaskUpdate={(id, field, value) => handleTaskUpdate(id, field, value)}
-                                  handleAddTask={() => handleAddTask()}
+                                  handleTaskUpdate={handleTaskUpdate}
+                                  handleAddTask={() => handleAddTask(task.id)}
                                   handleDuplicateTask={handleDuplicateTask}
                                   handleDeleteTask={handleDeleteTask}
                                 />

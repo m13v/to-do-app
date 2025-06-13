@@ -20,7 +20,7 @@ interface TaskRowProps {
   task: Task;
   index: number;
   handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => void;
-  handleAddTask: () => void;
+  handleAddTask: (id: string) => void;
   handleDuplicateTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
 }
@@ -142,7 +142,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
           <TableCell className="py-1 px-1 text-right">
             <div className="flex items-center justify-end gap-0.5">
               <Button
-                onClick={() => handleAddTask()}
+                onClick={() => handleAddTask(task.id)}
                 size="sm"
                 variant="ghost"
                 className="h-6 w-6 p-0"
