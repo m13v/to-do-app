@@ -28,7 +28,7 @@ interface TaskRowProps {
   handleDeleteTask: (id: string) => void;
   handleMoveTaskUp: (id: string) => void;
   handleMoveTaskDown: (id: string) => void;
-  onCellFocus: (rowIndex: number, colIndex: number) => void;
+  focusCell: (rowIndex: number, colIndex: number) => void;
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({
@@ -42,9 +42,33 @@ const TaskRow: React.FC<TaskRowProps> = ({
   handleDeleteTask,
   handleMoveTaskUp,
   handleMoveTaskDown,
-  onCellFocus,
+  focusCell,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
+
+  const numCols = 6; // Category, Status, Effort, Crit, Task, Today
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, colIndex: number) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+    
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusCell(Math.max(0, index - 1), colIndex);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusCell(Math.min(Infinity, index + 1), colIndex); // Assume large number for row count, parent will handle bounds
+    } else if (e.key === 'ArrowLeft') {
+      if (target.selectionStart === 0) {
+        e.preventDefault();
+        focusCell(index, Math.max(0, colIndex - 1));
+      }
+    } else if (e.key === 'ArrowRight') {
+      if (target.selectionEnd === target.value.length) {
+        e.preventDefault();
+        focusCell(index, Math.min(numCols - 1, colIndex + 1));
+      }
+    }
+  };
 
   useEffect(() => {
     setEditedTask(task);
@@ -92,13 +116,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
               value={editedTask.category}
               onChange={(e) => handleChange('category', e.target.value)}
               onBlur={() => handleBlur('category')}
-              onFocus={() => onCellFocus(index, 0)}
+              onKeyDown={(e) => handleKeyDown(e, 0)}
               className="h-7 py-0"
             />
           </TableCell>
           <TableCell className="py-1 px-1">
             <Select value={editedTask.status} onValueChange={(value) => handleChange('status', value)}>
-              <SelectTrigger id={`cell-${index}-1`} onFocus={() => onCellFocus(index, 1)} className="h-7 py-0">
+              <SelectTrigger id={`cell-${index}-1`} onFocus={() => focusCell(index, 1)} className="h-7 py-0">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -117,7 +141,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               value={editedTask.effort}
               onChange={(e) => handleChange('effort', e.target.value)}
               onBlur={() => handleBlur('effort')}
-              onFocus={() => onCellFocus(index, 2)}
+              onKeyDown={(e) => handleKeyDown(e, 2)}
               className="h-7 py-0 px-0 text-center"
               placeholder="1-10"
               title={`Effort: ${editedTask.effort}`}
@@ -132,7 +156,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               value={editedTask.criticality}
               onChange={(e) => handleChange('criticality', e.target.value)}
               onBlur={() => handleBlur('criticality')}
-              onFocus={() => onCellFocus(index, 3)}
+              onKeyDown={(e) => handleKeyDown(e, 3)}
               className="h-7 py-0 px-0 text-center"
               placeholder="1-3"
               title={`Criticality: ${editedTask.criticality}`}
@@ -144,7 +168,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               value={editedTask.task}
               onChange={(e) => handleChange('task', e.target.value)}
               onBlur={() => handleBlur('task')}
-              onFocus={() => onCellFocus(index, 4)}
+              onKeyDown={(e) => handleKeyDown(e, 4)}
               className="min-h-[28px] py-0.5 resize-none"
               rows={1}
             />
@@ -159,7 +183,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 }
                 handleChange('today', !!checked);
               }}
-              onFocus={() => onCellFocus(index, 5)}
+              onFocus={() => focusCell(index, 5)}
               aria-label="Mark as today"
             />
           </TableCell>
