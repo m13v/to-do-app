@@ -917,11 +917,13 @@ export default function Home() {
               You can edit the markdown content below before downloading.
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            value={exportableMarkdown}
-            onChange={(e) => setExportableMarkdown(e.target.value)}
-            className="min-h-[400px] font-mono text-xs"
-            />
+          <div className="max-h-[60vh] overflow-y-auto">
+            <Textarea
+              value={exportableMarkdown}
+              onChange={(e) => setExportableMarkdown(e.target.value)}
+              className="min-h-[400px] font-mono text-xs"
+              />
+          </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsExportModalOpen(false)}>Cancel</Button>
             <Button onClick={() => {
