@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner"
+import { generateDiff } from '@/lib/diff';
 
 type SortField = 'priority' | 'category' | 'task' | 'effort' | 'criticality';
 type SortDirection = 'asc' | 'desc';
@@ -65,6 +66,7 @@ export default function Home() {
   const [tasksSentToAI, setTasksSentToAI] = useState<Task[] | null>(null);
   const [history, setHistory] = useState<Task[][]>([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [recentDiff, setRecentDiff] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -114,7 +116,11 @@ export default function Home() {
   }, []);
 
   const updateAndSaveTasks = useCallback((newTasks: Task[], shouldRecordHistory: boolean = true) => {
+    const oldTasks = allTasks;
     if (shouldRecordHistory) {
+        const diff = generateDiff(oldTasks, newTasks);
+        setRecentDiff(diff);
+
         const newHistorySlice = history.slice(0, historyIndex + 1);
         const updatedHistory = [...newHistorySlice, newTasks];
         // Limit history to 20 undo steps + current state
@@ -237,12 +243,16 @@ export default function Home() {
     setTasksSentToAI(tasksForAI);
 
     try {
+      const userPromptWithContext = recentDiff 
+        ? `${prompt}\n\nFor context, here are my recent changes:\n${recentDiff}\n\nAnd here is the current task list:\n${tasksToMarkdown(tasksForAI)}`
+        : `${prompt}\n\n${tasksToMarkdown(tasksForAI)}`;
+
       const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemPrompt,
-          userPrompt: `${prompt}\n\n${tasksToMarkdown(tasksForAI)}`,
+          userPrompt: userPromptWithContext,
         }),
       });
 
@@ -274,7 +284,7 @@ export default function Home() {
     } finally {
       setProcessingAI(false);
     }
-  }, [prompt, allTasks, filteredAllTasks, searchQuery]);
+  }, [prompt, allTasks, filteredAllTasks, searchQuery, recentDiff]);
 
   const handleConfirmAIChanges = () => {
     if (aiGeneratedContent && tasksSentToAI) {
@@ -404,7 +414,7 @@ export default function Home() {
     const afterIndex = newTasks.findIndex(t => t.id === afterId);
     const category = newTasks[afterIndex]?.category || 'NEW';
     const newPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0) + 1;
-    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, task: '', status: 'to_do', effort: '5', criticality: '2' };
+    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, task: '', status: 'to_do', effort: '5', criticality: '2', today: false };
     const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
@@ -718,7 +728,7 @@ export default function Home() {
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-[25px] px-1"></TableHead>
-                            <TableHead className="w-[40px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                            <TableHead className="w-[60px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -730,7 +740,7 @@ export default function Home() {
                                 </Tooltip>
                               </TooltipProvider>
                             </TableHead>
-                            <TableHead className="w-[150px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                            <TableHead className="w-[140px] px-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
                               <div className="flex items-center gap-1">
                                 Category {getSortIcon('category')}
                               </div>
