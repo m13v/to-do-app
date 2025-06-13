@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// This is a placeholder for a real AI service
-async function getAICompletion(systemPrompt: string, userPrompt: string) {
-  // In a real application, you would make a call to an AI service like OpenAI,
-  // passing both the system and user prompts.
-  
-  // For now, we'll simulate a response that just returns the user's prompt
-  // as if it were the AI's answer.
-  console.log('AI System Prompt:', systemPrompt);
-  console.log('AI User Prompt:', userPrompt);
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // A more realistic simulation might try to apply the prompt's instructions
-  // to the provided content, but for now, we'll keep it simple.
-  
-  return userPrompt;
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error('GEMINI_API_KEY environment variable not set');
 }
+
+const genAI = new GoogleGenerativeAI(apiKey);
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro-preview-06-05" });
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,12 +17,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Both systemPrompt and userPrompt are required.' }, { status: 400 });
     }
     
-    const aiResponse = await getAICompletion(systemPrompt, userPrompt);
+    const chat = model.startChat({
+      history: [
+        { role: "user", parts: [{ text: systemPrompt }] },
+        { role: "model", parts: [{ text: "Understood. I will follow all rules." }] },
+      ],
+      generationConfig: {
+        maxOutputTokens: 8000,
+      },
+    });
+
+    const result = await chat.sendMessage(userPrompt);
+    const response = result.response;
+    const aiResponse = response.text();
     
     return NextResponse.json({ content: aiResponse });
+
   } catch (error) {
     console.error('Error in AI service:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    
+    // Check for specific error related to oversized prompts
+    if (errorMessage.includes('400 Bad Request') || errorMessage.includes('request entity too large')) {
+      return NextResponse.json({ 
+        error: 'The task list is too large for the AI to process. Please filter your tasks or try a different prompt.',
+        details: errorMessage 
+      }, { status: 413 }); // 413 Payload Too Large
+    }
+    
     return NextResponse.json({ error: 'Failed to get response from AI', details: errorMessage }, { status: 500 });
   }
-} 
+}
