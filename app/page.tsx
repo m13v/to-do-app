@@ -423,6 +423,26 @@ Your response will be parsed by the application, so it's critical to maintain th
     }
   };
 
+  const runDailyReset = useCallback(() => {
+    const lastVisitDate = localStorage.getItem('lastVisitDate');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (lastVisitDate !== today) {
+      console.log("New day detected. Resetting 'Today' tasks.");
+      const resetTasks = allTasks.map(task => ({ ...task, today: false }));
+      setActiveTasks(resetTasks.filter(t => t.status !== 'done'));
+      setDoneTasks(resetTasks.filter(t => t.status === 'done'));
+      saveTasks(resetTasks);
+      localStorage.setItem('lastVisitDate', today);
+    }
+  }, [allTasks, saveTasks]);
+
+  useEffect(() => {
+    if (!loading) {
+      runDailyReset();
+    }
+  }, [loading, runDailyReset]);
+
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b">
