@@ -705,88 +705,94 @@ export default function Home() {
 
                 {/* Today Tasks Section */}
                 {todayTasks.length > 0 && (
-                  <Card className="border-2 border-primary">
+                  <Card className="mb-6 border-2 border-primary">
                     <CardHeader className="py-2 bg-primary/10">
                       <CardTitle className="text-sm">Today&apos;s Tasks ({todayTasks.length})</CardTitle>
                     </CardHeader>
                     <CardContent className="py-2">
                       {isDesktop ? (
-                        <div className="overflow-x-auto">
-                          <Table className="table-fixed w-full">
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-[25px] px-0.5"></TableHead>
-                                <TableHead className="w-[70px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger className="w-full h-full flex items-center justify-center">
-                                        {getSortIcon('priority')}
-                                      </TooltipTrigger>
-                                      <TooltipContent>Overall Priority</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </TableHead>
-                                <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
-                                  <div className="flex items-center gap-1">
-                                    Category {getSortIcon('category')}
-                                  </div>
-                                </TableHead>
-                                <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                                <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <div className="flex items-center justify-center gap-1">
-                                          E {getSortIcon('effort')}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Effort (1-10)</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </TableHead>
-                                <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <div className="flex items-center justify-center gap-1">
-                                          C {getSortIcon('criticality')}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Criticality (1-3)</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </TableHead>
-                                <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
-                                  <div className="flex items-center gap-1">
-                                    Task {getSortIcon('task')}
-                                  </div>
-                                </TableHead>
-                                <TableHead className="w-[60px] px-0.5">Today</TableHead>
-                                <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {todayTasks.map((task, idx) => (
-                                <TaskRow
-                                  key={task.id}
-                                  task={task}
-                                  index={idx}
-                                  isFirst={idx === 0}
-                                  isLast={idx === todayTasks.length - 1}
-                                  isDraggable={false}
-                                  handleTaskUpdate={handleTaskUpdate}
-                                  handlePriorityChange={handlePriorityChange}
-                                  handleAddTask={() => handleAddTask(task.id)}
-                                  handleDuplicateTask={() => handleDuplicateTask(task.id)}
-                                  handleDeleteTask={() => handleDeleteTask(task.id)}
-                                  handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
-                                  handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
-                                  focusCell={focusCell}
-                                />
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
+                        <DragDropContext onDragEnd={() => {}}>
+                          <div className="overflow-x-auto">
+                            <Table className="table-fixed w-full">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-[25px] px-0.5"></TableHead>
+                                  <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger className="w-full h-full flex items-center justify-center">
+                                          {getSortIcon('priority')}
+                                        </TooltipTrigger>
+                                        <TooltipContent>Overall Priority</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </TableHead>
+                                  <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                    <div className="flex items-center gap-1">
+                                      Category {getSortIcon('category')}
+                                    </div>
+                                  </TableHead>
+                                  <TableHead className="w-[100px] px-0.5">Status</TableHead>
+                                  <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <div className="flex items-center justify-center gap-1">
+                                            E {getSortIcon('effort')}
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Effort (1-10)</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </TableHead>
+                                  <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <div className="flex items-center justify-center gap-1">
+                                            C {getSortIcon('criticality')}
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Criticality (1-3)</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </TableHead>
+                                  <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                    <div className="flex items-center gap-1">
+                                      Task {getSortIcon('task')}
+                                    </div>
+                                  </TableHead>
+                                  <TableHead className="w-[60px] px-0.5">Today</TableHead>
+                                  <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <Droppable droppableId="today-tasks" isDropDisabled={true}>
+                                {(provided) => (
+                                  <TableBody ref={provided.innerRef} {...provided.droppableProps}>
+                                    {todayTasks.map((task, idx) => (
+                                      <TaskRow
+                                        key={task.id}
+                                        task={task}
+                                        index={idx}
+                                        isFirst={idx === 0}
+                                        isLast={idx === todayTasks.length - 1}
+                                        handleTaskUpdate={handleTaskUpdate}
+                                        handlePriorityChange={handlePriorityChange}
+                                        handleAddTask={() => handleAddTask(task.id)}
+                                        handleDuplicateTask={() => handleDuplicateTask(task.id)}
+                                        handleDeleteTask={() => handleDeleteTask(task.id)}
+                                        handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
+                                        handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
+                                        focusCell={focusCell}
+                                      />
+                                    ))}
+                                    {provided.placeholder}
+                                  </TableBody>
+                                )}
+                              </Droppable>
+                            </Table>
+                          </div>
+                        </DragDropContext>
                       ) : (
                         <div>
                           {todayTasks.map((task, index) => (
