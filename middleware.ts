@@ -1,5 +1,11 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
+
+// Define the routes that should be protected
+// We are removing '/' from this list to make the main page public
+const isProtectedRoute = createRouteMatcher([
+  // '/dashboard(.*)', // Example of a protected route
+]);
 
 export default clerkMiddleware((auth, req: NextRequest) => {
   const userAgent = req.headers.get('user-agent')?.toLowerCase() || '';
@@ -21,6 +27,7 @@ export default clerkMiddleware((auth, req: NextRequest) => {
     return NextResponse.redirect(url);
   }
 
+  if (isProtectedRoute(req)) auth().protect();
 });
 
 export const config = {
