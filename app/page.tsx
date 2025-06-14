@@ -716,7 +716,7 @@ export default function Home() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="w-[25px] px-0.5"></TableHead>
-                                <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                <TableHead className="w-[70px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -822,7 +822,7 @@ export default function Home() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="w-[25px] px-0.5"></TableHead>
-                                <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                <TableHead className="w-[70px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                    <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -941,7 +941,7 @@ export default function Home() {
                               <TableHeader>
                                 <TableRow>
                                   <TableHead className="w-[25px] px-0.5"></TableHead>
-                                  <TableHead className="w-[60px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                  <TableHead className="w-[70px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger className="w-full h-full flex items-center justify-center">
