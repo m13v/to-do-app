@@ -138,7 +138,7 @@ export default function Home() {
     setDoneTasks(newTasks.filter(t => t.status === 'done'));
 
     saveTasks(newTasks);
-  }, [history, historyIndex, saveTasks]);
+  }, [allTasks, history, historyIndex, saveTasks]);
 
   const retrySync = useCallback(async () => {
     setSyncError(false);
