@@ -705,7 +705,7 @@ export default function Home() {
 
                 {/* Today Tasks Section */}
                 {todayTasks.length > 0 && (
-                  <Card className="mb-6 border-2 border-primary">
+                  <Card className="border-2 border-primary">
                     <CardHeader className="py-2 bg-primary/10">
                       <CardTitle className="text-sm">Today&apos;s Tasks ({todayTasks.length})</CardTitle>
                     </CardHeader>
