@@ -22,6 +22,7 @@ interface TaskRowProps {
   index: number;
   isFirst: boolean;
   isLast: boolean;
+  isDraggable?: boolean;
   handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'>, value: string | boolean) => void;
   handlePriorityChange: (id: string, priority: number) => void;
   handleAddTask: (id: string) => void;
@@ -37,6 +38,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   index,
   isFirst,
   isLast,
+  isDraggable = true,
   handleTaskUpdate,
   handlePriorityChange,
   handleAddTask,
@@ -95,48 +97,46 @@ const TaskRow: React.FC<TaskRowProps> = ({
     }
   };
 
-  return (
-    <Draggable key={task.id} draggableId={task.id} index={index}>
-      {(provided) => (
+  const rowContent = (provided?: DraggableProvided) => (
         <TableRow
-          ref={provided.innerRef}
-          {...provided.draggableProps}
+      ref={provided?.innerRef}
+      {...(provided?.draggableProps || {})}
           className={cn(
             "group",
             task.status === 'done' && "text-muted-foreground line-through"
           )}
         >
-          <TableCell {...provided.dragHandleProps} className="cursor-grab px-0.5">
-            <GripVertical className="h-4 w-4" />
+      <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab px-0.5">
+        {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
           </TableCell>
-          <TableCell className="py-0.5 px-0.5">
-            <Input
-              type="number"
-              value={editedTask.priority}
-              onChange={(e) => {
-                setEditedTask(prev => ({ ...prev, priority: parseInt(e.target.value, 10) || 0 }));
-              }}
-              onBlur={() => {
-                if (editedTask.priority !== task.priority) {
-                  handlePriorityChange(task.id, editedTask.priority);
-                }
-              }}
-              className="h-6 py-0 text-center"
-            />
+      <TableCell className="py-0.5 px-0.5">
+        <Input
+          type="number"
+          value={editedTask.priority}
+          onChange={(e) => {
+            setEditedTask(prev => ({ ...prev, priority: parseInt(e.target.value, 10) || 0 }));
+          }}
+          onBlur={() => {
+            if (editedTask.priority !== task.priority) {
+              handlePriorityChange(task.id, editedTask.priority);
+            }
+          }}
+          className="h-6 py-0 text-center"
+        />
           </TableCell>
-          <TableCell className="font-medium py-0.5 px-0">
+      <TableCell className="font-medium py-0.5 px-0">
             <Input
               id={`cell-${index}-0`}
               value={editedTask.category}
               onChange={(e) => handleChange('category', e.target.value)}
               onBlur={() => handleBlur('category')}
               onKeyDown={(e) => handleKeyDown(e, 0)}
-              className="h-6 py-0 px-1"
+          className="h-6 py-0 px-1"
             />
           </TableCell>
-          <TableCell className="py-0.5 px-1">
+      <TableCell className="py-0.5 px-1">
             <Select value={editedTask.status} onValueChange={(value) => handleChange('status', value)}>
-              <SelectTrigger id={`cell-${index}-1`} onFocus={() => focusCell(index, 1)} className="h-6 py-0 px-2">
+          <SelectTrigger id={`cell-${index}-1`} onFocus={() => focusCell(index, 1)} className="h-6 py-0 px-2">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -146,7 +146,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               </SelectContent>
             </Select>
           </TableCell>
-          <TableCell className="py-0.5 px-0">
+      <TableCell className="py-0.5 px-0">
             <Input
               id={`cell-${index}-2`}
               type="number"
@@ -156,12 +156,12 @@ const TaskRow: React.FC<TaskRowProps> = ({
               onChange={(e) => handleChange('effort', e.target.value)}
               onBlur={() => handleBlur('effort')}
               onKeyDown={(e) => handleKeyDown(e, 2)}
-              className="h-6 py-0 px-0 text-center"
+          className="h-6 py-0 px-0 text-center"
               placeholder="1-10"
               title={`Effort: ${editedTask.effort}`}
             />
           </TableCell>
-          <TableCell className="py-0.5 px-1">
+      <TableCell className="py-0.5 px-1">
             <Input
               id={`cell-${index}-3`}
               type="number"
@@ -171,23 +171,23 @@ const TaskRow: React.FC<TaskRowProps> = ({
               onChange={(e) => handleChange('criticality', e.target.value)}
               onBlur={() => handleBlur('criticality')}
               onKeyDown={(e) => handleKeyDown(e, 3)}
-              className="h-6 py-0 px-0 text-center"
+          className="h-6 py-0 px-0 text-center"
               placeholder="1-3"
               title={`Criticality: ${editedTask.criticality}`}
             />
           </TableCell>
-          <TableCell className="py-0.5 px-1">
+      <TableCell className="py-0.5 px-1">
             <Textarea
               id={`cell-${index}-4`}
               value={editedTask.task}
               onChange={(e) => handleChange('task', e.target.value)}
               onBlur={() => handleBlur('task')}
               onKeyDown={(e) => handleKeyDown(e, 4)}
-              className="min-h-[24px] py-0.5 resize-none"
+          className="min-h-[24px] py-0.5 resize-none"
               rows={1}
             />
           </TableCell>
-          <TableCell className="py-0.5 px-1 text-center">
+      <TableCell className="py-0.5 px-1 text-center">
             <Checkbox
               id={`cell-${index}-5`}
               checked={!!editedTask.today}
@@ -201,8 +201,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
               aria-label="Mark as today"
             />
           </TableCell>
-          <TableCell className="py-0.5 px-0 text-right">
-            <div className="flex items-center justify-end gap-0">
+      <TableCell className="py-0.5 px-0 text-right">
+        <div className="flex items-center justify-end gap-0">
               <Button
                 onClick={() => handleMoveTaskUp(task.id)}
                 size="sm"
@@ -253,7 +253,15 @@ const TaskRow: React.FC<TaskRowProps> = ({
             </div>
           </TableCell>
         </TableRow>
-      )}
+  );
+
+  if (!isDraggable) {
+    return rowContent();
+  }
+
+  return (
+    <Draggable key={task.id} draggableId={task.id} index={index}>
+      {(provided) => rowContent(provided)}
     </Draggable>
   );
 };

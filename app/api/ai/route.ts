@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
       const jsonString = response.candidates[0].content.parts[0].text;
       
       try {
-        const parsedJson = JSON.parse(jsonString);
-        // We return the content of the markdown_table property, not the whole JSON object
-        return NextResponse.json({ content: parsedJson.markdown_table });
+      const parsedJson = JSON.parse(jsonString);
+      // We return the content of the markdown_table property, not the whole JSON object
+      return NextResponse.json({ content: parsedJson.markdown_table });
       } catch {
         console.error("Failed to parse AI JSON response. String was:", jsonString);
         throw new Error("AI returned a response that was not valid JSON.");
