@@ -812,7 +812,7 @@ export default function Home() {
 
                 <Card>
                   <CardHeader className="py-2">
-                    <CardTitle className="text-sm">Task Categories ({filteredActiveTasks.length} tasks)</CardTitle>
+                    <CardTitle className="text-sm">Task List ({filteredActiveTasks.length} tasks)</CardTitle>
                   </CardHeader>
                   <CardContent className="py-2">
                     <DragDropContext onDragEnd={handleDragEnd}>
