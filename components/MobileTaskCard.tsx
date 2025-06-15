@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Task } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
-import { ArrowUp, ArrowDown, Plus, Copy, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,14 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 interface MobileTaskCardProps {
   task: Task;
-  isFirst: boolean;
-  isLast: boolean;
   onUpdate: (id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => void;
   onDelete: (id: string) => void;
   onAdd: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onMoveUp: (id: string) => void;
-  onMoveDown: (id: string) => void;
   onPriorityChange: (id: string, newPriority: number) => void;
 }
 
@@ -32,7 +27,7 @@ const NumberStepper: React.FC<{ value: number | string; onChange: (newValue: num
   </div>
 );
 
-const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, isFirst, isLast, onUpdate, onDelete, onAdd, onDuplicate, onMoveUp, onMoveDown, onPriorityChange }) => {
+const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelete, onAdd, onPriorityChange }) => {
   const [editedTask, setEditedTask] = useState(task);
 
   useEffect(() => {
@@ -92,10 +87,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, isFirst, isLast, 
           </div>
         </div>
         <div className="flex items-center justify-end gap-0">
-           <Button onClick={() => onMoveUp(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0" disabled={isFirst}><ArrowUp className="h-4 w-4" /></Button>
-           <Button onClick={() => onMoveDown(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0" disabled={isLast}><ArrowDown className="h-4 w-4" /></Button>
            <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><Plus className="h-4 w-4" /></Button>
-           <Button onClick={() => onDuplicate(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><Copy className="h-4 w-4" /></Button>
            <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><X className="h-4 w-4" /></Button>
         </div>
       </CardContent>

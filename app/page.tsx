@@ -440,37 +440,6 @@ export default function Home() {
     updateAndSaveTasks([...updatedActive, ...updatedDone]);
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
 
-  const handleDuplicateTask = useCallback((id: string) => {
-    const newTasks = [...activeTasks];
-    const taskToDuplicate = newTasks.find(t => t.id === id);
-    if (taskToDuplicate) {
-      const index = newTasks.findIndex(t => t.id === id);
-      const duplicatedTask: Task = { ...taskToDuplicate, id: `${Date.now()}-${Math.random()}` };
-      const updatedTasks = insertTaskAt(newTasks, index + 1, duplicatedTask);
-      updateAndSaveTasks([...updatedTasks, ...doneTasks]);
-    }
-  }, [activeTasks, doneTasks, updateAndSaveTasks]);
-
-  const handleMoveTaskUp = useCallback((taskId: string) => {
-    const index = activeTasks.findIndex(t => t.id === taskId);
-    if (index > 0) {
-      const newTasks = [...activeTasks];
-      const [movedTask] = newTasks.splice(index, 1);
-      newTasks.splice(index - 1, 0, movedTask);
-      updateAndSaveTasks([...newTasks, ...doneTasks]);
-    }
-  }, [activeTasks, doneTasks, updateAndSaveTasks]);
-
-  const handleMoveTaskDown = useCallback((taskId: string) => {
-    const index = activeTasks.findIndex(t => t.id === taskId);
-    if (index < activeTasks.length - 1 && index !== -1) {
-      const newTasks = [...activeTasks];
-      const [movedTask] = newTasks.splice(index, 1);
-      newTasks.splice(index + 1, 0, movedTask);
-      updateAndSaveTasks([...newTasks, ...doneTasks]);
-    }
-  }, [activeTasks, doneTasks, updateAndSaveTasks]);
-
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -739,16 +708,10 @@ export default function Home() {
                                   key={task.id}
                                   task={task}
                                   index={idx}
-                                  isFirst={idx === 0}
-                                  isLast={idx === todayTasks.length - 1}
-                                  isDraggable={false}
                                   handleTaskUpdate={handleTaskUpdate}
                                   handlePriorityChange={handlePriorityChange}
                                   handleAddTask={() => handleAddTask(task.id)}
-                                  handleDuplicateTask={() => handleDuplicateTask(task.id)}
                                   handleDeleteTask={() => handleDeleteTask(task.id)}
-                                  handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
-                                  handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
                                   focusCell={focusCell}
                                 />
                               ))}
@@ -757,18 +720,13 @@ export default function Home() {
                         </div>
                       ) : (
                         <div>
-                          {todayTasks.map((task, index) => (
+                          {todayTasks.map((task) => (
                             <MobileTaskCard
                               key={task.id}
                               task={task}
-                              isFirst={index === 0}
-                              isLast={index === todayTasks.length - 1}
                               onUpdate={handleTaskUpdate}
                               onDelete={handleDeleteTask}
                               onAdd={() => handleAddTask(task.id)}
-                              onDuplicate={() => handleDuplicateTask(task.id)}
-                              onMoveUp={() => handleMoveTaskUp(task.id)}
-                              onMoveDown={() => handleMoveTaskDown(task.id)}
                               onPriorityChange={handlePriorityChange}
                             />
                           ))}
@@ -823,15 +781,10 @@ export default function Home() {
                                       key={task.id}
                                       task={task}
                                       index={index}
-                                      isFirst={index === 0}
-                                      isLast={index === sortedActiveTasks.length - 1}
                                       handleTaskUpdate={handleTaskUpdate}
                                       handlePriorityChange={handlePriorityChange}
                                       handleAddTask={() => handleAddTask(task.id)}
-                                      handleDuplicateTask={() => handleDuplicateTask(task.id)}
                                       handleDeleteTask={() => handleDeleteTask(task.id)}
-                                      handleMoveTaskUp={() => handleMoveTaskUp(task.id)}
-                                      handleMoveTaskDown={() => handleMoveTaskDown(task.id)}
                                       focusCell={focusCell}
                                     />
                                   ))}
@@ -845,18 +798,13 @@ export default function Home() {
                         <Droppable droppableId="tasks-mobile" isDropDisabled={true}>
                           {(provided) => (
                             <div ref={provided.innerRef} {...provided.droppableProps}>
-                              {sortedActiveTasks.map((task, index) => (
+                              {sortedActiveTasks.map((task) => (
                                 <MobileTaskCard
                                   key={task.id}
                                   task={task}
-                                  isFirst={index === 0}
-                                  isLast={index === sortedActiveTasks.length - 1}
                                   onUpdate={handleTaskUpdate}
                                   onDelete={handleDeleteTask}
                                   onAdd={() => handleAddTask(task.id)}
-                                  onDuplicate={() => handleDuplicateTask(task.id)}
-                                  onMoveUp={() => handleMoveTaskUp(task.id)}
-                                  onMoveDown={() => handleMoveTaskDown(task.id)}
                                   onPriorityChange={handlePriorityChange}
                                 />
                               ))}
@@ -916,15 +864,10 @@ export default function Home() {
                                     key={task.id}
                                     task={task}
                                     index={index}
-                                    isFirst={true} isLast={true} // Move buttons disabled
-                                    isDraggable={false}
                                     handleTaskUpdate={handleTaskUpdate}
                                     handlePriorityChange={handlePriorityChange}
                                     handleAddTask={() => handleAddTask(task.id)}
-                                    handleDuplicateTask={() => handleDuplicateTask(task.id)}
                                     handleDeleteTask={() => handleDeleteTask(task.id)}
-                                    handleMoveTaskUp={() => {}}
-                                    handleMoveTaskDown={() => {}}
                                     focusCell={() => {}}
                                   />
                                 ))}

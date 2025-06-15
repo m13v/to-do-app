@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { GripVertical, Plus, Copy, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { GripVertical, Plus, X } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
   Select,
@@ -20,32 +20,22 @@ import { cn } from '@/lib/utils';
 interface TaskRowProps {
   task: Task;
   index: number;
-  isFirst: boolean;
-  isLast: boolean;
   isDraggable?: boolean;
   handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'>, value: string | boolean) => void;
   handlePriorityChange: (id: string, priority: number) => void;
   handleAddTask: (id: string) => void;
-  handleDuplicateTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
-  handleMoveTaskUp: (id: string) => void;
-  handleMoveTaskDown: (id: string) => void;
   focusCell: (rowIndex: number, colIndex: number) => void;
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({
   task,
   index,
-  isFirst,
-  isLast,
   isDraggable = true,
   handleTaskUpdate,
   handlePriorityChange,
   handleAddTask,
-  handleDuplicateTask,
   handleDeleteTask,
-  handleMoveTaskUp,
-  handleMoveTaskDown,
   focusCell,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
@@ -174,26 +164,6 @@ const TaskRow: React.FC<TaskRowProps> = ({
       <TableCell className="py-0.5 px-0 text-right">
         <div className="flex items-center justify-end gap-0">
               <Button
-                onClick={() => handleMoveTaskUp(task.id)}
-                size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0"
-                title="Move up"
-                disabled={isFirst}
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={() => handleMoveTaskDown(task.id)}
-                size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0"
-                title="Move down"
-                disabled={isLast}
-              >
-                <ArrowDown className="h-4 w-4" />
-              </Button>
-              <Button
                 onClick={() => handleAddTask(task.id)}
                 size="sm"
                 variant="ghost"
@@ -201,15 +171,6 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 title="Add task below"
               >
                 <Plus className="h-3 w-3" />
-              </Button>
-              <Button
-                onClick={() => handleDuplicateTask(task.id)}
-                size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0"
-                title="Duplicate"
-              >
-                <Copy className="h-3 w-3" />
               </Button>
               <Button
                 onClick={() => handleDeleteTask(task.id)}

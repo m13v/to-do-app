@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+when user say push in a distinc way, it means push code to github through git which usually trigger deployment to production
+before pushing build the project and make sure it builds or debug if needed
+push after that with comments based on the conversation since last push or since the beginning of the conversation
