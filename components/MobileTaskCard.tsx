@@ -90,14 +90,6 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, isFirst, isLast, 
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center justify-between">
-            <strong className="text-foreground">Effort:</strong>
-            <NumberStepper value={task.effort} onChange={(newVal) => onUpdate(task.id, 'effort', String(newVal))} min={1} max={10} />
-          </div>
-          <div className="flex items-center justify-between">
-            <strong className="text-foreground">Criticality:</strong>
-            <NumberStepper value={task.criticality} onChange={(newVal) => onUpdate(task.id, 'criticality', String(newVal))} min={1} max={3} />
-          </div>
         </div>
         <div className="flex items-center justify-end gap-0">
            <Button onClick={() => onMoveUp(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0" disabled={isFirst}><ArrowUp className="h-4 w-4" /></Button>

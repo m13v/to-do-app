@@ -1,0 +1,4 @@
+{
+    "prompt_1": "now considering these style of comments, generate comments to post in the posts you found about ai to do list subtly referencing our app at todoapp . ai without directly posting it as a link, it should not be formatted as a link, instead it should be clear that it is a link but not clickable, for example, you can write it as 'todoapp . ai' or 'todoapp ai'",
+    "prompt_2": "after that comment on 1-3 comments of others matching their style and continuing conversation but keeping in mind our previous prompt"
+} 

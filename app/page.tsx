@@ -27,21 +27,19 @@ import AnimatedTitle from '@/components/AnimatedTitle';
 import { useMediaQuery } from '@/lib/hooks/use-media-query';
 import MobileTaskCard from '@/components/MobileTaskCard';
 
-type SortField = 'priority' | 'category' | 'task' | 'effort' | 'criticality';
+type SortField = 'priority' | 'category' | 'task';
 type SortDirection = 'asc' | 'desc';
 
-const defaultTasksMarkdown = `| P | Category | Task | Status | Done | Effort | Criticality |
-|---|---|---|---|---|---|---|
-| 1 | Welcome | Welcome to your new task manager! | to_do | | 5 | 2 |
-| 2 | Welcome | Click on any task text to edit it. | to_do | | 1 | 1 |
-| 3 | Welcome | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | | 1 | 1 |
-| 4 | Welcome | Drag and drop tasks to reorder them. | to_do | | 2 | 1 |
-| 5 | Welcome | Use the search bar to filter your tasks. | to_do | | 1 | 1 |
-| 6 | Welcome | Click on the column headers to sort your list. | to_do | | 1 | 1 |
-| 7 | Welcome | Set effort from 1-10 to estimate task size. | to_do | | 1 | 2 |
-| 8 | Welcome | Set criticality from 1-3 to prioritize important work. | to_do | | 1 | 2 |
-| 9 | Welcome | Use the AI Assistant to manage your tasks with natural language. | to_do | | 3 | 3 |
-| 10 | Welcome | Delete these welcome tasks when you're ready to start. | to_do | | 1 | 1 |
+const defaultTasksMarkdown = `| P | Category | Task | Status | Done |
+|---|---|---|---|---|
+| 1 | Welcome | Welcome to your new task manager! | to_do | |
+| 2 | Welcome | Click on any task text to edit it. | to_do | |
+| 3 | Welcome | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | |
+| 4 | Welcome | Drag and drop tasks to reorder them. | to_do | |
+| 5 | Welcome | Use the search bar to filter your tasks. | to_do | |
+| 6 | Welcome | Click on the column headers to sort your list. | to_do | |
+| 7 | Welcome | Use the AI Assistant to manage your tasks with natural language. | to_do | |
+| 8 | Welcome | Delete these welcome tasks when you're ready to start. | to_do | |
 `;
 
 const systemPrompt = `You are an AI assistant helping to manage a todo list. The user will provide a markdown table and a prompt.
@@ -49,7 +47,7 @@ Your task is to return a new, updated markdown table based on the user's prompt.
 
 **RULES:**
 1.  **ONLY** return the markdown table. Do not include any other text, titles, headers, or explanations.
-2.  The table structure is fixed. The columns are: | Category | Task | Status | Effort | Criticality | Today |
+2.  The table structure is fixed. The columns are: | Category | Task | Status | Today |
 3.  Do **NOT** add, remove, or rename any columns.
 4.  Preserve the pipe \`|\` separators and the markdown table format exactly.
 Your output will be parsed by a script, so any deviation from this format will break the application.
@@ -431,7 +429,7 @@ export default function Home() {
     const afterIndex = newTasks.findIndex(t => t.id === afterId);
     const category = newTasks[afterIndex]?.category || 'NEW';
     const newPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0) + 1;
-    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, task: '', status: 'to_do', effort: '5', criticality: '2', today: false };
+    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, task: '', status: 'to_do', today: false };
     const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
@@ -501,12 +499,6 @@ export default function Home() {
           break;
         case 'task':
           comparison = a.task.localeCompare(b.task);
-          break;
-        case 'effort':
-          comparison = (parseInt(a.effort) || 0) - (parseInt(b.effort) || 0);
-          break;
-        case 'criticality':
-          comparison = (parseInt(a.criticality) || 0) - (parseInt(b.criticality) || 0);
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -732,30 +724,6 @@ export default function Home() {
                                   </div>
                                 </TableHead>
                                 <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                                <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <div className="flex items-center justify-center gap-1">
-                                          E {getSortIcon('effort')}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Effort (1-10)</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </TableHead>
-                                <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <div className="flex items-center justify-center gap-1">
-                                          C {getSortIcon('criticality')}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Criticality (1-3)</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </TableHead>
                                 <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
                                   <div className="flex items-center gap-1">
                                     Task {getSortIcon('task')}
@@ -838,30 +806,6 @@ export default function Home() {
                                   </div>
                                 </TableHead>
                                 <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                                <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <div className="flex items-center justify-center gap-1">
-                                          E {getSortIcon('effort')}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Effort (1-10)</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </TableHead>
-                                <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <div className="flex items-center justify-center gap-1">
-                                          C {getSortIcon('criticality')}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Criticality (1-3)</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </TableHead>
                                 <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
                                   <div className="flex items-center gap-1">
                                     Task {getSortIcon('task')}
@@ -957,30 +901,6 @@ export default function Home() {
                                     </div>
                                   </TableHead>
                                   <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                                  <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('effort')}>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger>
-                                          <div className="flex items-center justify-center gap-1">
-                                            E {getSortIcon('effort')}
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Effort (1-10)</TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </TableHead>
-                                  <TableHead className="w-[40px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('criticality')}>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger>
-                                          <div className="flex items-center justify-center gap-1">
-                                            C {getSortIcon('criticality')}
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Criticality (1-3)</TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </TableHead>
                                   <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
                                     <div className="flex items-center gap-1">
                                       Task {getSortIcon('task')}

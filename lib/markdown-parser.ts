@@ -4,8 +4,6 @@ export interface Task {
   category: string;
   task: string;
   status: string;
-  effort: string;
-  criticality: string;
   today: boolean;
 }
 
@@ -21,8 +19,6 @@ export function parseMarkdownTable(markdown: string): Task[] {
   const categoryIndex = headers.indexOf('category');
   const taskIndex = headers.indexOf('task');
   const statusIndex = headers.indexOf('status');
-  const effortIndex = headers.indexOf('effort');
-  const criticalityIndex = headers.indexOf('criticality');
   const todayIndex = headers.indexOf('today');
 
   const taskLines = lines.slice(lines.indexOf(headerLine) + 2);
@@ -40,22 +36,20 @@ export function parseMarkdownTable(markdown: string): Task[] {
       category: getValue(categoryIndex),
       task: getValue(taskIndex),
       status: getValue(statusIndex),
-      effort: getValue(effortIndex),
-      criticality: getValue(criticalityIndex),
       today: todayIndex !== -1 ? getValue(todayIndex).toLowerCase() === 'yes' : false,
     };
   }).filter((task): task is Task => task !== null);
 }
 
 export function tasksToMarkdown(tasks: Task[]): string {
-  let markdown = '| P | Category | Task | Status | Effort | Criticality | Today |\n';
-  markdown += '|---|----------|------|--------|--------|-------------|-------|\n';
+  let markdown = '| P | Category | Task | Status | Today |\n';
+  markdown += '|---|----------|------|--------|-------|\n';
   
   // Sort tasks by priority before converting to markdown
   const sortedTasks = [...tasks].sort((a, b) => a.priority - b.priority);
 
   for (const task of sortedTasks) {
-    markdown += `| ${task.priority} | ${task.category} | ${task.task} | ${task.status} | ${task.effort} | ${task.criticality} | ${task.today ? 'yes' : ''} |\n`;
+    markdown += `| ${task.priority} | ${task.category} | ${task.task} | ${task.status} | ${task.today ? 'yes' : ''} |\n`;
   }
   
   return markdown;

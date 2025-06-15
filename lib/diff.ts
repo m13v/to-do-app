@@ -31,12 +31,6 @@ export function generateDiff(oldTasks: Task[], newTasks: Task[]): string {
        if (oldTask.priority !== newTask.priority) {
         changes.push(`priority changed from ${oldTask.priority} to ${newTask.priority}`);
       }
-      if (oldTask.effort !== newTask.effort) {
-        changes.push(`effort changed from ${oldTask.effort} to ${newTask.effort}`);
-      }
-      if (oldTask.criticality !== newTask.criticality) {
-        changes.push(`criticality changed from ${oldTask.criticality} to ${newTask.criticality}`);
-      }
       if (oldTask.today !== newTask.today) {
         changes.push(`marked as ${newTask.today ? 'today' : 'not today'}`);
       }

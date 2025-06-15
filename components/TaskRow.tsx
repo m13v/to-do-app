@@ -50,7 +50,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
 }) => {
   const [editedTask, setEditedTask] = useState(task);
 
-  const numCols = 6; // Category, Status, Effort, Crit, Task, Today
+  const numCols = 4; // Category, Status, Task, Today
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, colIndex: number) => {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
@@ -146,50 +146,20 @@ const TaskRow: React.FC<TaskRowProps> = ({
               </SelectContent>
             </Select>
           </TableCell>
-      <TableCell className="py-0.5 px-0">
-            <Input
-              id={`cell-${index}-2`}
-              type="number"
-              min="1"
-              max="10"
-              value={editedTask.effort}
-              onChange={(e) => handleChange('effort', e.target.value)}
-              onBlur={() => handleBlur('effort')}
-              onKeyDown={(e) => handleKeyDown(e, 2)}
-          className="h-6 py-0 px-0 text-center"
-              placeholder="1-10"
-              title={`Effort: ${editedTask.effort}`}
-            />
-          </TableCell>
-      <TableCell className="py-0.5 px-1">
-            <Input
-              id={`cell-${index}-3`}
-              type="number"
-              min="1"
-              max="3"
-              value={editedTask.criticality}
-              onChange={(e) => handleChange('criticality', e.target.value)}
-              onBlur={() => handleBlur('criticality')}
-              onKeyDown={(e) => handleKeyDown(e, 3)}
-          className="h-6 py-0 px-0 text-center"
-              placeholder="1-3"
-              title={`Criticality: ${editedTask.criticality}`}
-            />
-          </TableCell>
       <TableCell className="py-0.5 px-1">
             <Textarea
-              id={`cell-${index}-4`}
+              id={`cell-${index}-2`}
               value={editedTask.task}
               onChange={(e) => handleChange('task', e.target.value)}
               onBlur={() => handleBlur('task')}
-              onKeyDown={(e) => handleKeyDown(e, 4)}
+              onKeyDown={(e) => handleKeyDown(e, 2)}
           className="min-h-[24px] py-0.5 resize-none"
               rows={1}
             />
           </TableCell>
       <TableCell className="py-0.5 px-1 text-center">
             <Checkbox
-              id={`cell-${index}-5`}
+              id={`cell-${index}-3`}
               checked={!!editedTask.today}
               onCheckedChange={checked => {
                 if (process.env.NODE_ENV === 'development') {
@@ -197,7 +167,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 }
                 handleChange('today', !!checked);
               }}
-              onFocus={() => focusCell(index, 5)}
+              onFocus={() => focusCell(index, 3)}
               aria-label="Mark as today"
             />
           </TableCell>

@@ -1,0 +1,92 @@
+[
+    {
+        "post_url": "https://www.reddit.com/r/alphaandbetausers/comments/1l3tn61/an_ai_app_that_uses_context_from_your_emails_todo/",
+        "main_comment": "This is a great idea. I've been working on something similar, an AI-first to-do app that helps you manage your tasks. It's called todoapp . ai and it's still in the early stages, but it's been a fun project to work on.",
+        "replies": [
+            {
+                "comment_to_reply_to": "This is a great idea. I've been looking for something like this. How does it work?",
+                "reply": "Thanks! It connects to your email and calendar to automatically create tasks and reminders. It's still in development, but you can check it out at todoapp . ai."
+            }
+        ]
+    },
+    {
+        "post_url": "https://www.reddit.com/r/ProductivityApps/comments/1hspf7r/ai_todo_list_apps/",
+        "main_comment": "I've been using a pen and paper for my to-do list for a while now, but I'm looking for something more powerful. I'm building an AI-first to-do app called todoapp . ai that I think will be a great solution for this.",
+        "replies": [
+            {
+                "comment_to_reply_to": "I've tried a few to-do list apps, but I haven't found one that I love. I'm interested to see what you're building.",
+                "reply": "Thanks for the interest! I'm hoping to have a beta version ready soon. You can follow the progress at todoapp . ai."
+            }
+        ]
+    },
+    {
+        "post_url": "https://www.reddit.com/r/productivity/comments/1989ii1/how_do_i_use_ai_to_organize_and_automate_my_to_do/",
+        "main_comment": "I've been thinking about this a lot lately. I'm building an AI-powered to-do list app that I think will solve a lot of these problems. It's called todoapp . ai and it's designed to be simple and easy to use.",
+        "replies": [
+            {
+                "comment_to_reply_to": "I'm always looking for ways to be more productive. I'll definitely check it out.",
+                "reply": "Great! I'm hoping to have a beta version ready soon. You can follow the progress at todoapp . ai."
+            }
+        ]
+    },
+    {
+        "post_url": "https://www.reddit.com/r/iosapps/comments/1ks1zks/i_built_an_aipowered_todo_app_that_tells_me_what/",
+        "main_comment": "This is awesome! I'm also building an AI-powered to-do app called todoapp . ai. It's great to see other people working on similar ideas.",
+        "replies": [
+            {
+                "comment_to_reply_to": "This is a great idea. I've been looking for something like this. How does it work?",
+                "reply": "Thanks! It uses AI to help you prioritize your tasks and create a daily schedule. It's still in development, but you can check it out at todoapp . ai."
+            }
+        ]
+    },
+    {
+        "post_url": "https://www.reddit.com/r/ProductivityApps/comments/1h7lvr1/building_an_aipowered_todo_list_app_need_beta/",
+        "main_comment": "I'm also building an AI-powered to-do list app and looking for beta testers. It's called todoapp . ai and I'd love to get your feedback.",
+        "replies": [
+            {
+                "comment_to_reply_to": "I'd be happy to test it out. What's the best way to get in touch?",
+                "reply": "Awesome! You can sign up for the beta at todoapp . ai. I'm looking forward to hearing what you think."
+            }
+        ]
+    },
+    {
+        "post_url": "https://www.reddit.com/r/SaaS/comments/1ih4sjk/is_anyone_actually_building_completely_with_ai/",
+        "main_comment": "I'm building a to-do list app with AI, and I'm trying to make it actually useful. It's not about the hype, it's about solving a real problem. It's called todoapp . ai if you want to check it out.",
+        "replies": [
+            {
+                "comment_to_reply_to": "I'm skeptical of most AI apps, but I'm willing to give it a try. What makes yours different?",
+                "reply": "I'm trying to focus on a simple, clean user experience that solves a real problem. It's not about being flashy, it's about being useful. You can see what I'm building at todoapp . ai."
+            }
+        ]
+    },
+    {
+        "post_url": "https://www.reddit.com/r/aipromptprogramming/comments/1g4bj2q/how_ai_helped_me_build_my_first_app_in_just_a/",
+        "main_comment": "This is a great story. I'm also using AI to build a to-do list app. It's amazing how much faster it is to build with AI. My project is called todoapp . ai.",
+        "replies": [
+            {
+                "comment_to_reply_to": "That's awesome! I'm just starting to learn how to code with AI. Do you have any tips?",
+                "reply": "I'd say just dive in and start building. It's the best way to learn. And don't be afraid to ask for help. I'm building my app, todoapp . ai, in public, so you can follow along if you're interested."
+            }
+        ]
+    },
+    {
+        "post_url": "https://www.reddit.com/r/androidapps/comments/1jhy4ru/whats_your_favorite_ai_app_right_now/",
+        "main_comment": "I'm a big fan of Perplexity for search. I'm also building an AI-powered to-do list app called todoapp . ai. It's still in the early stages, but I'm excited about the potential.",
+        "replies": [
+            {
+                "comment_to_reply_to": "I'm always on the lookout for new AI apps. I'll definitely check it out.",
+                "reply": "Thanks! I'm hoping to have a beta version ready soon. You can follow the progress at todoapp . ai."
+            }
+        ]
+    },
+    {
+        "post_url": "https://www.reddit.com/r/androidapps/comments/1cqavuy/your_best_ai_apps_that_actually_work_and_are/",
+        "main_comment": "I'm building an AI-powered to-do list app called todoapp . ai that I think is actually useful. It's not a gimmick, it's a tool that helps you get things done.",
+        "replies": [
+            {
+                "comment_to_reply_to": "I'm skeptical of most AI apps, but I'm willing to give it a try. What makes yours different?",
+                "reply": "I'm trying to focus on a simple, clean user experience that solves a real problem. It's not about being flashy, it's about being useful. You can see what I'm building at todoapp . ai."
+            }
+        ]
+    }
+] 
