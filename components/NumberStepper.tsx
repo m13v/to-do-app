@@ -12,9 +12,10 @@ interface NumberStepperProps {
   min?: number;
   max?: number;
   title?: string;
+  showLabels?: boolean;
 }
 
-const NumberStepper: React.FC<NumberStepperProps> = ({ value, onChange, onBlur, min, max, title }) => (
+const NumberStepper: React.FC<NumberStepperProps> = ({ value, onChange, onBlur, min, max, title, showLabels = false }) => (
   <div className="flex items-center gap-2">
     {title && <span className="text-sm font-medium">{title}</span>}
     <Input
@@ -29,19 +30,19 @@ const NumberStepper: React.FC<NumberStepperProps> = ({ value, onChange, onBlur, 
         onClick={() => onChange(Math.max(min ?? -Infinity, Number(value) - 1))}
         size="sm"
         variant="ghost"
-        className="h-6 px-2"
+        className={showLabels ? "h-6 px-2" : "h-5 w-5 p-0"}
       >
-        <ChevronDown className="h-4 w-4 mr-1" />
-        Down
+        <ChevronDown className={showLabels ? "h-4 w-4 mr-1" : "h-4 w-4"} />
+        {showLabels && 'Down'}
       </Button>
       <Button
         onClick={() => onChange(Math.min(max ?? Infinity, Number(value) + 1))}
         size="sm"
         variant="ghost"
-        className="h-6 px-2"
+        className={showLabels ? "h-6 px-2" : "h-5 w-5 p-0"}
       >
-        <ChevronUp className="h-4 w-4 mr-1" />
-        Up
+        <ChevronUp className={showLabels ? "h-4 w-4 mr-1" : "h-4 w-4"} />
+        {showLabels && 'Up'}
       </Button>
     </div>
   </div>

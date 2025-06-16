@@ -55,6 +55,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
                   onPriorityChange(task.id, editedTask.priority);
                 }
               }}
+              showLabels={true}
             />
           </div>
           <div></div>
