@@ -4,12 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Task } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
-import { Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import NumberStepper from './NumberStepper';
 
 interface MobileTaskCardProps {
   task: Task;
@@ -18,14 +19,6 @@ interface MobileTaskCardProps {
   onAdd: (id: string) => void;
   onPriorityChange: (id: string, newPriority: number) => void;
 }
-
-const NumberStepper: React.FC<{ value: number | string; onChange: (newValue: number) => void; min?: number; max?: number; }> = ({ value, onChange, min, max }) => (
-  <div className="flex items-center gap-1.5">
-    <Button onClick={() => onChange(Math.max(min ?? -Infinity, Number(value) - 1))} size="sm" variant="ghost" className="h-5 w-5 p-0"><ChevronLeft className="h-4 w-4" /></Button>
-    <span>{value}</span>
-    <Button onClick={() => onChange(Math.min(max ?? Infinity, Number(value) + 1))} size="sm" variant="ghost" className="h-5 w-5 p-0"><ChevronRight className="h-4 w-4" /></Button>
-  </div>
-);
 
 const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelete, onAdd, onPriorityChange }) => {
   const [editedTask, setEditedTask] = useState(task);
@@ -53,8 +46,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
         />
         <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
           <div className="flex items-center justify-between">
-            <strong className="text-foreground">Priority:</strong>
-            <NumberStepper value={task.priority} onChange={(newVal) => onPriorityChange(task.id, newVal)} />
+            <NumberStepper title="Priority:" value={task.priority} onChange={(newVal) => onPriorityChange(task.id, newVal)} />
           </div>
           <div className="flex items-center justify-between">
             <strong className="text-foreground">Today:</strong>

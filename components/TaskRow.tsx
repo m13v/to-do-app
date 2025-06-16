@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import NumberStepper from './NumberStepper';
 
 interface TaskRowProps {
   task: Task;
@@ -100,19 +101,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
         {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
           </TableCell>
       <TableCell className="py-0.5 px-0.5">
-        <Input
-          type="number"
-          value={editedTask.priority}
-          onChange={(e) => {
-            setEditedTask(prev => ({ ...prev, priority: parseInt(e.target.value, 10) || 0 }));
-          }}
-          onBlur={() => {
-            if (editedTask.priority !== task.priority) {
-              handlePriorityChange(task.id, editedTask.priority);
-            }
-          }}
-          className="h-6 py-0 text-center"
-        />
+        <NumberStepper value={task.priority} onChange={(newVal) => handlePriorityChange(task.id, newVal)} />
           </TableCell>
       <TableCell className="font-medium py-0.5 px-0">
             <Input
