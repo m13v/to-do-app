@@ -57,6 +57,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
               }}
             />
           </div>
+          <div></div>
           <div className="flex items-center justify-between">
             <strong className="text-foreground">Category:</strong>
             <Input
@@ -80,9 +81,9 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
             </Select>
           </div>
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
-            <strong className="text-foreground">Today:</strong>
+            <strong className="text-sm font-medium text-foreground">Today:</strong>
             <Checkbox
               checked={!!task.today}
               onCheckedChange={checked => onUpdate(task.id, 'today', !!checked)}
