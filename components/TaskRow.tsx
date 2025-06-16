@@ -101,7 +101,15 @@ const TaskRow: React.FC<TaskRowProps> = ({
         {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
           </TableCell>
       <TableCell className="py-0.5 px-0.5">
-        <NumberStepper value={task.priority} onChange={(newVal) => handlePriorityChange(task.id, newVal)} />
+        <NumberStepper
+          value={editedTask.priority}
+          onChange={(newVal) => setEditedTask(prev => ({ ...prev, priority: newVal }))}
+          onBlur={() => {
+            if (editedTask.priority !== task.priority) {
+              handlePriorityChange(task.id, editedTask.priority);
+            }
+          }}
+        />
           </TableCell>
       <TableCell className="font-medium py-0.5 px-0">
             <Input

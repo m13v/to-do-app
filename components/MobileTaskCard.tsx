@@ -46,7 +46,16 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
         />
         <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
           <div className="flex items-center justify-between">
-            <NumberStepper title="Priority:" value={task.priority} onChange={(newVal) => onPriorityChange(task.id, newVal)} />
+            <NumberStepper
+              title="Priority:"
+              value={editedTask.priority}
+              onChange={(newVal) => setEditedTask(prev => ({ ...prev, priority: newVal }))}
+              onBlur={() => {
+                if (editedTask.priority !== task.priority) {
+                  onPriorityChange(task.id, editedTask.priority);
+                }
+              }}
+            />
           </div>
           <div className="flex items-center justify-between">
             <strong className="text-foreground">Today:</strong>
