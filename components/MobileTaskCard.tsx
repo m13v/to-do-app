@@ -86,9 +86,15 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
             </Select>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-0">
-           <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><Plus className="h-4 w-4" /></Button>
-           <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-6 w-6 p-0"><X className="h-4 w-4" /></Button>
+        <div className="flex items-center justify-end gap-2">
+           <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 px-2">
+             <Plus className="h-4 w-4 mr-1" />
+             Add
+            </Button>
+           <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-6 px-2">
+             <X className="h-4 w-4 mr-1" />
+             Delete
+            </Button>
         </div>
       </CardContent>
     </Card>

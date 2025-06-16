@@ -26,3 +26,40 @@
  GET /api/prompts 401 in 16ms
  GET /api/prompts 401 in 15ms
  ✓ Compiled in 47ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'
+}
+ ✓ Compiled /_error in 328ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.gd7kn9kmpj'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.gd7kn9kmpj'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.1g6488o08pc'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.1g6488o08pc'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.eppurs5xkrv'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.eppurs5xkrv'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}

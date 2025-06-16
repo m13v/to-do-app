@@ -674,11 +674,11 @@ export default function Home() {
                       <DragDropContext onDragEnd={() => {}}>
                         {isDesktop ? (
                           <div className="overflow-x-auto">
-                            <Table className="table-fixed w-full">
+                            <Table className="w-full">
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="w-[25px] px-0.5"></TableHead>
-                                  <TableHead className="w-[70px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                  <TableHead className="px-0.5"></TableHead>
+                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -688,19 +688,19 @@ export default function Home() {
                                       </Tooltip>
                                     </TooltipProvider>
                                   </TableHead>
-                                  <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
                                     <div className="flex items-center gap-1">
                                       Category {getSortIcon('category')}
                                     </div>
                                   </TableHead>
-                                  <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                                  <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                  <TableHead className="px-0.5">Status</TableHead>
+                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
                                     <div className="flex items-center gap-1">
                                       Task {getSortIcon('task')}
                                     </div>
                                   </TableHead>
-                                  <TableHead className="w-[60px] px-0.5">Today</TableHead>
-                                  <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
+                                  <TableHead className="px-0.5">Today</TableHead>
+                                  <TableHead className="px-0.5 text-right" title="Actions">Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <Droppable droppableId="today-tasks" isDropDisabled={true}>
@@ -756,11 +756,11 @@ export default function Home() {
                     <DragDropContext onDragEnd={handleDragEnd}>
                       {isDesktop ? (
                         <div className="overflow-x-auto">
-                          <Table className="table-fixed w-full">
+                          <Table className="w-full">
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="w-[25px] px-0.5"></TableHead>
-                                <TableHead className="w-[70px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                <TableHead className="px-0.5"></TableHead>
+                                <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                    <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -770,19 +770,19 @@ export default function Home() {
                                     </Tooltip>
                                   </TooltipProvider>
                                 </TableHead>
-                                <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
                                   <div className="flex items-center gap-1">
                                     Category {getSortIcon('category')}
                                   </div>
                                 </TableHead>
-                                <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                                <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                <TableHead className="px-0.5">Status</TableHead>
+                                <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
                                   <div className="flex items-center gap-1">
                                     Task {getSortIcon('task')}
                                   </div>
                                 </TableHead>
-                                <TableHead className="w-[60px] px-0.5">Today</TableHead>
-                                <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
+                                <TableHead className="px-0.5">Today</TableHead>
+                                <TableHead className="px-0.5 text-right" title="Actions">Actions</TableHead>
                               </TableRow>
                             </TableHeader>
                             <Droppable droppableId="tasks">
@@ -841,11 +841,11 @@ export default function Home() {
                       {isArchiveOpen && (
                         <CardContent className="py-2">
                           <div className="overflow-x-auto">
-                            <Table className="table-fixed w-full">
+                            <Table className="w-full">
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="w-[25px] px-0.5"></TableHead>
-                                  <TableHead className="w-[70px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                  <TableHead className="px-0.5"></TableHead>
+                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -855,19 +855,19 @@ export default function Home() {
                                       </Tooltip>
                                     </TooltipProvider>
                                   </TableHead>
-                                  <TableHead className="w-[140px] px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
                                     <div className="flex items-center gap-1">
                                       Category {getSortIcon('category')}
                                     </div>
                                   </TableHead>
-                                  <TableHead className="w-[100px] px-0.5">Status</TableHead>
-                                  <TableHead className="w-auto px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                  <TableHead className="px-0.5">Status</TableHead>
+                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
                                     <div className="flex items-center gap-1">
                                       Task {getSortIcon('task')}
                                     </div>
                                   </TableHead>
-                                  <TableHead className="w-[60px] px-0.5">Today</TableHead>
-                                  <TableHead className="w-[140px] px-0.5 text-right" title="Actions">Actions</TableHead>
+                                  <TableHead className="px-0.5">Today</TableHead>
+                                  <TableHead className="px-0.5 text-right" title="Actions">Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
