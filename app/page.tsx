@@ -510,9 +510,11 @@ export default function Home() {
     const today = new Date().toISOString().split('T')[0];
 
     if (lastVisitDate !== today) {
-      console.log("New day detected. Resetting 'Today' tasks.");
-      const resetTasks = allTasks.map(task => ({ ...task, today: false }));
-      updateAndSaveTasks(resetTasks);
+      if (allTasks.length > 0 && allTasks.some(t => t.today)) {
+        console.log("New day detected. Resetting 'Today' tasks.");
+        const resetTasks = allTasks.map(task => ({ ...task, today: false }));
+        updateAndSaveTasks(resetTasks, false);
+      }
       localStorage.setItem('lastVisitDate', today);
     }
   }, [allTasks, updateAndSaveTasks]);
