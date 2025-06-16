@@ -29,17 +29,19 @@ const NumberStepper: React.FC<NumberStepperProps> = ({ value, onChange, onBlur, 
         onClick={() => onChange(Math.max(min ?? -Infinity, Number(value) - 1))}
         size="sm"
         variant="ghost"
-        className="h-5 w-5 p-0"
+        className="h-6 px-2"
       >
-        <ChevronDown className="h-4 w-4" />
+        <ChevronDown className="h-4 w-4 mr-1" />
+        Down
       </Button>
       <Button
         onClick={() => onChange(Math.min(max ?? Infinity, Number(value) + 1))}
         size="sm"
         variant="ghost"
-        className="h-5 w-5 p-0"
+        className="h-6 px-2"
       >
-        <ChevronUp className="h-4 w-4" />
+        <ChevronUp className="h-4 w-4 mr-1" />
+        Up
       </Button>
     </div>
   </div>
