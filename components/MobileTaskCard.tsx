@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 interface MobileTaskCardProps {
   task: Task;
-  onUpdate: (id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => void;
+  onUpdate: (id: string, field: keyof Omit<Task, 'id'> | 'today', value: string | boolean) => void;
   onDelete: (id: string) => void;
   onAdd: (id: string) => void;
   onPriorityChange: (id: string, newPriority: number) => void;

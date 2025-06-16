@@ -375,7 +375,7 @@ export default function Home() {
     handleAIPrompt(e);
   }, [handleAIPrompt]);
 
-  const handleTaskUpdate = useCallback((id: string, field: keyof Omit<Task, 'id'>, value: string | boolean) => {
+  const handleTaskUpdate = useCallback((id: string, field: keyof Omit<Task, 'id'> | 'today', value: string | boolean) => {
     let taskToMove: Task | undefined;
     const updatedActive = [...activeTasks];
     const updatedDone = [...doneTasks];

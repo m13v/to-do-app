@@ -21,7 +21,7 @@ interface TaskRowProps {
   task: Task;
   index: number;
   isDraggable?: boolean;
-  handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'>, value: string | boolean) => void;
+  handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'> | 'today', value: string | boolean) => void;
   handlePriorityChange: (id: string, priority: number) => void;
   handleAddTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
@@ -69,7 +69,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   }, [task]);
 
   const debouncedUpdate = useDebouncedCallback(
-    (field: keyof Omit<Task, 'id' | 'priority'>, value: string | boolean) => {
+    (field: keyof Omit<Task, 'id' | 'priority'> | 'today', value: string | boolean) => {
       handleTaskUpdate(task.id, field, value);
     },
     300
@@ -82,8 +82,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
 
   const handleBlur = (field: keyof Omit<Task, 'id' | 'priority'>) => {
     debouncedUpdate.flush();
-    if (editedTask[field] !== task[field]) {
-      handleTaskUpdate(task.id, field, String(editedTask[field]));
+    if (editedTask[field as keyof Task] !== task[field as keyof Task]) {
+      handleTaskUpdate(task.id, field, String(editedTask[field as keyof Task]));
     }
   };
 
