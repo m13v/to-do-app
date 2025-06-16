@@ -952,11 +952,17 @@ export default function Home() {
             <Textarea
               value={exportableMarkdown}
               onChange={(e) => setExportableMarkdown(e.target.value)}
-              className="min-h-[400px] font-mono text-xs"
+              className="min-h-[400px] font-mono text-xs whitespace-pre"
               />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsExportModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              navigator.clipboard.writeText(exportableMarkdown);
+              toast.success("Copied to clipboard!");
+            }}>
+              Copy to Clipboard
+            </Button>
             <Button onClick={() => {
               const blob = new Blob([exportableMarkdown], { type: 'text/markdown' });
               const url = URL.createObjectURL(blob);
