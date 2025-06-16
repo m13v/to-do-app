@@ -680,7 +680,7 @@ export default function Home() {
                               <TableHeader>
                                 <TableRow>
                                   <TableHead className="px-0.5"></TableHead>
-                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                  <TableHead className="px-0.5">
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -690,15 +690,15 @@ export default function Home() {
                                       </Tooltip>
                                     </TooltipProvider>
                                   </TableHead>
-                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                  <TableHead className="px-0.5">
                                     <div className="flex items-center gap-1">
-                                      Category {getSortIcon('category')}
+                                      Category
                                     </div>
                                   </TableHead>
                                   <TableHead className="px-0.5">Status</TableHead>
-                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                  <TableHead className="px-0.5">
                                     <div className="flex items-center gap-1">
-                                      Task {getSortIcon('task')}
+                                      Task
                                     </div>
                                   </TableHead>
                                   <TableHead className="px-0.5">Today</TableHead>
