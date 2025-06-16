@@ -28,7 +28,12 @@ export async function GET() {
       return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 
-    return NextResponse.json(data || []);
+    const filteredData = data?.filter(prompt => 
+      prompt.title !== 'Update Effort column' && 
+      prompt.title !== 'Update Criticality column'
+    ) || [];
+
+    return NextResponse.json(filteredData);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error fetching prompts:', error);
