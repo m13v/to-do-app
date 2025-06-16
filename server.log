@@ -13,7 +13,7 @@
  ⚠     Unrecognized key(s) in object: 'api'
  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next- ○ Compiling / ...
  ✓ Compiled / in 1032ms
- GET / 200 in 1245ms
+ GET / 200 in [?25h
  ✓ Compiled /favicon.ico in 129ms
  GET /favicon.ico?favicon.ff4d1693.ico 200 in 358ms
  ✓ Compiled /api/prompts in 209ms
@@ -63,3 +63,4 @@
   syscall: 'open',
   path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
 }
+[?25h

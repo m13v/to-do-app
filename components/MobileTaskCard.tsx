@@ -58,13 +58,6 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
             />
           </div>
           <div className="flex items-center justify-between">
-            <strong className="text-foreground">Today:</strong>
-            <Checkbox
-              checked={!!task.today}
-              onCheckedChange={checked => onUpdate(task.id, 'today', !!checked)}
-            />
-          </div>
-          <div className="flex items-center justify-between">
             <strong className="text-foreground">Category:</strong>
             <Input
                 value={editedTask.category}
@@ -87,15 +80,24 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
             </Select>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-2">
-           <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 px-2">
-             <Plus className="h-4 w-4 mr-1" />
-             Add
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <strong className="text-foreground">Today:</strong>
+            <Checkbox
+              checked={!!task.today}
+              onCheckedChange={checked => onUpdate(task.id, 'today', !!checked)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 px-2">
+              <Plus className="h-4 w-4 mr-1" />
+              Add
             </Button>
-           <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-6 px-2">
-             <X className="h-4 w-4 mr-1" />
-             Delete
+            <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-6 px-2">
+              <X className="h-4 w-4 mr-1" />
+              Delete
             </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
