@@ -1,0 +1,28 @@
+
+> todo-table-app@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Port 3000 is in use, using available port 3002 instead.
+   ▲ Next.js 15.3.3 (Turbopack)
+   - Local:        http://localhost:3002
+   - Network:      http://10.6.105.22:3002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'api'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next- ○ Compiling / ...
+ ✓ Compiled / in 1032ms
+ GET / 200 in 1245ms
+ ✓ Compiled /favicon.ico in 129ms
+ GET /favicon.ico?favicon.ff4d1693.ico 200 in 358ms
+ ✓ Compiled /api/prompts in 209ms
+ GET /api/prompts 401 in 260ms
+ GET /api/prompts 401 in 17ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 51ms
+ GET / 200 in 213ms
+ GET /favicon.ico?favicon.ff4d1693.ico 200 in 215ms
+ GET /api/prompts 401 in 16ms
+ GET /api/prompts 401 in 15ms
+ ✓ Compiled in 47ms
