@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Merge } from 'lucide-react';
+import { Loader2, Merge, Search } from 'lucide-react';
 import { Task } from '@/lib/markdown-parser';
 
 interface CategoriesManagerProps {
@@ -18,6 +18,7 @@ export default function CategoriesManager({ tasks, onMergeCategories }: Categori
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [targetCategory, setTargetCategory] = useState('');
   const [isMerging, setIsMerging] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Calculate category statistics
   const categoryStats = useMemo(() => {
@@ -29,10 +30,10 @@ export default function CategoriesManager({ tasks, onMergeCategories }: Categori
       }
     });
     
-    // Convert to array and sort by task count (descending)
+    // Convert to array and sort alphabetically by name
     return Array.from(stats.entries())
       .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [tasks]);
 
   // Handle category selection
@@ -83,17 +84,101 @@ export default function CategoriesManager({ tasks, onMergeCategories }: Categori
       .reduce((sum, cat) => sum + cat.count, 0);
   }, [categoryStats, selectedCategories]);
 
+  // Filter categories based on search query
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categoryStats;
+    const query = searchQuery.toLowerCase();
+    return categoryStats.filter(cat => cat.name.toLowerCase().includes(query));
+  }, [categoryStats, searchQuery]);
+
   return (
     <div className="space-y-4">
+      {/* Merge Controls and Stats - Top Bar */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
+            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                <span className="font-medium">{categoryStats.length}</span>
+                <span>categories</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="font-medium">{tasks.length}</span>
+                <span>tasks</span>
+              </div>
+              <div className="border-l pl-4 ml-1">
+                {selectedCategories.size === 0 ? (
+                  <span>No selection</span>
+                ) : (
+                  <span className="font-medium">
+                    {selectedCategories.size} selected ({selectedTaskCount} tasks)
+                  </span>
+                )}
+              </div>
+            </div>
+            <Input
+              type="text"
+              placeholder="Enter target category name..."
+              value={targetCategory}
+              onChange={(e) => setTargetCategory(e.target.value)}
+              className="flex-1 h-9"
+              disabled={selectedCategories.size < 2}
+            />
+            <Button
+              onClick={handleMerge}
+              disabled={isMerging || selectedCategories.size < 2 || !targetCategory.trim()}
+              className="min-w-[120px] h-9"
+            >
+              {isMerging ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Merging...
+                </>
+              ) : (
+                <>
+                  <Merge className="h-4 w-4 mr-2" />
+                  Merge
+                </>
+              )}
+            </Button>
+          </div>
+          {selectedCategories.size > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {Array.from(selectedCategories).map(cat => (
+                <span 
+                  key={cat}
+                  className="px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded text-sm"
+                >
+                  {cat}
+                </span>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Categories Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Category Management</CardTitle>
+          <CardTitle>All Categories ({categoryStats.length})</CardTitle>
           <CardDescription>
-            Select multiple categories to merge them into one. All tasks in the selected categories will be updated to use the target category name.
+            Select multiple categories to merge them into one. All tasks will be updated to use the target category name.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search categories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-9"
+              />
+            </div>
+
             {/* Categories Table */}
             <div className="border rounded-lg overflow-hidden">
               <Table>
@@ -105,118 +190,33 @@ export default function CategoriesManager({ tasks, onMergeCategories }: Categori
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {categoryStats.length === 0 ? (
+                  {filteredCategories.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={3} className="text-center text-gray-500 py-8">
-                        No categories found. Add tasks with categories to get started.
+                        {categoryStats.length === 0 
+                          ? 'No categories found. Add tasks with categories to get started.'
+                          : 'No categories match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    categoryStats.map((category) => (
-                      <TableRow 
-                        key={category.name}
-                        className={selectedCategories.has(category.name) ? 'bg-blue-50 dark:bg-blue-950' : ''}
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedCategories.has(category.name)}
-                            onCheckedChange={() => handleToggleCategory(category.name)}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">{category.name}</TableCell>
-                        <TableCell className="text-right">{category.count}</TableCell>
-                      </TableRow>
+                    filteredCategories.map((category) => (
+                    <TableRow 
+                      key={category.name}
+                      className={selectedCategories.has(category.name) ? 'bg-blue-50 dark:bg-blue-950' : ''}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedCategories.has(category.name)}
+                          onCheckedChange={() => handleToggleCategory(category.name)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell className="text-right">{category.count}</TableCell>
+                    </TableRow>
                     ))
                   )}
                 </TableBody>
               </Table>
-            </div>
-
-            {/* Merge Action Section */}
-            {selectedCategories.size > 0 && (
-              <Card className="border-2 border-blue-500 bg-blue-50 dark:bg-blue-950">
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold mb-2">
-                        Selected {selectedCategories.size} {selectedCategories.size === 1 ? 'category' : 'categories'} ({selectedTaskCount} tasks)
-                      </h3>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {Array.from(selectedCategories).map(cat => (
-                          <span 
-                            key={cat}
-                            className="px-2 py-1 bg-blue-200 dark:bg-blue-800 rounded text-sm"
-                          >
-                            {cat}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {selectedCategories.size >= 2 && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Merge into category name:
-                        </label>
-                        <div className="flex gap-2">
-                          <Input
-                            type="text"
-                            placeholder="Enter target category name..."
-                            value={targetCategory}
-                            onChange={(e) => setTargetCategory(e.target.value)}
-                            className="flex-1"
-                          />
-                          <Button
-                            onClick={handleMerge}
-                            disabled={isMerging || !targetCategory.trim()}
-                            className="min-w-[120px]"
-                          >
-                            {isMerging ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Merging...
-                              </>
-                            ) : (
-                              <>
-                                <Merge className="h-4 w-4 mr-2" />
-                                Merge
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          This will update all {selectedTaskCount} tasks in the selected categories to use &quot;{targetCategory.trim() || '...'}&quot; as their category.
-                        </p>
-                      </div>
-                    )}
-
-                    {selectedCategories.size === 1 && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Select at least one more category to enable merging.
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Statistics Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Statistics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-600 dark:text-gray-400">Total Categories:</span>
-              <span className="ml-2 font-semibold">{categoryStats.length}</span>
-            </div>
-            <div>
-              <span className="text-gray-600 dark:text-gray-400">Total Tasks:</span>
-              <span className="ml-2 font-semibold">{tasks.length}</span>
             </div>
           </div>
         </CardContent>

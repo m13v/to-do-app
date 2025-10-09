@@ -800,6 +800,14 @@ export default function Home() {
                 )}
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  {/* Tab Navigation */}
+                  <div className="mb-3 p-2 bg-muted/30 rounded-md">
+                    <TabsList className="h-9">
+                      <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                      <TabsTrigger value="categories">Categories</TabsTrigger>
+                    </TabsList>
+                  </div>
+
                   <TabsContent value="tasks" className="space-y-3">
                 
                 <div className="mb-3">
@@ -952,20 +960,12 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Tabs and Pagination controls */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3 p-2 bg-muted/30 rounded-md">
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <TabsList className="h-9">
-                      <TabsTrigger value="tasks">Tasks</TabsTrigger>
-                      <TabsTrigger value="categories">Categories</TabsTrigger>
-                    </TabsList>
-                    {totalPages > 1 && (
-                      <div className="text-sm text-gray-600">
-                        Showing {startIndex + 1}-{Math.min(endIndex, sortedActiveTasks.length)} of {sortedActiveTasks.length} tasks
-                      </div>
-                    )}
-                  </div>
-                  {totalPages > 1 && (
+                {/* Pagination controls */}
+                {totalPages > 1 && (
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3 p-2 bg-muted/30 rounded-md">
+                    <div className="text-sm text-gray-600">
+                      Showing {startIndex + 1}-{Math.min(endIndex, sortedActiveTasks.length)} of {sortedActiveTasks.length} tasks
+                    </div>
                     <div className="flex items-center gap-2">
                       <Button
                         onClick={() => setCurrentPage(1)}
@@ -1003,8 +1003,8 @@ export default function Home() {
                         Last
                       </Button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Today Tasks Section */}
                 {todayTasks.length > 0 && (
