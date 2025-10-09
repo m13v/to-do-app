@@ -28,6 +28,8 @@ import { generateDiff } from '@/lib/diff';
 import AnimatedTitle from '@/components/AnimatedTitle';
 import { useMediaQuery } from '@/lib/hooks/use-media-query';
 import MobileTaskCard from '@/components/MobileTaskCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CategoriesManager from '@/components/CategoriesManager';
 
 type SortField = 'priority' | 'category' | 'task';
 type SortDirection = 'asc' | 'desc';
@@ -80,8 +82,16 @@ export default function Home() {
   const [exportableMarkdown, setExportableMarkdown] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  // Header collapse state
+  // Header collapse state - initialize to false to avoid hydration mismatch, then load from localStorage
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  
+  // Load header collapse state from localStorage after hydration
+  useEffect(() => {
+    const stored = localStorage.getItem('isHeaderCollapsed');
+    if (stored === 'true') {
+      setIsHeaderCollapsed(true);
+    }
+  }, []);
   // Pagination state - render only 200 tasks at a time for performance
   const [currentPage, setCurrentPage] = useState(1);
   const TASKS_PER_PAGE = 200;
@@ -89,6 +99,8 @@ export default function Home() {
   const [lastKnownServerTimestamp, setLastKnownServerTimestamp] = useState<string | null>(null);
   const [conflictDetected, setConflictDetected] = useState(false);
   const [conflictData, setConflictData] = useState<{ serverContent: string; serverTimestamp: string } | null>(null);
+  // Tab state for switching between Tasks and Categories views
+  const [activeTab, setActiveTab] = useState<string>('tasks');
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
   
@@ -171,6 +183,56 @@ export default function Home() {
     await saveTasks(allTasks);
   }, [allTasks, saveTasks]);
 
+  // Handle conflict resolution - reload server data
+  const handleReloadFromServer = useCallback(() => {
+    if (!conflictData) return;
+    
+    console.log('[Conflict Detection] User chose to reload from server');
+    const serverTasks = parseMarkdownTable(conflictData.serverContent);
+    
+    // Update local state with server data
+    setActiveTasks(serverTasks.filter(t => t.status !== 'done'));
+    setDoneTasks(serverTasks.filter(t => t.status === 'done'));
+    
+    // Update history
+    const newHistorySlice = history.slice(0, historyIndex + 1);
+    const updatedHistory = [...newHistorySlice, serverTasks];
+    if (updatedHistory.length > 21) {
+      updatedHistory.shift();
+    }
+    setHistory(updatedHistory);
+    setHistoryIndex(updatedHistory.length - 1);
+    
+    // Update localStorage
+    localStorage.setItem('markdownContent', conflictData.serverContent);
+    
+    // Update timestamp
+    setLastKnownServerTimestamp(conflictData.serverTimestamp);
+    
+    // Clear conflict state
+    setConflictDetected(false);
+    setConflictData(null);
+    
+    toast.success("Tasks reloaded from server");
+  }, [conflictData, history, historyIndex]);
+
+  // Handle conflict resolution - keep local data
+  const handleKeepLocalData = useCallback(async () => {
+    console.log('[Conflict Detection] User chose to keep local data');
+    
+    // Force save local data to server (overwrite)
+    const success = await saveTasks(allTasks, true);
+    
+    if (success) {
+      // Clear conflict state
+      setConflictDetected(false);
+      setConflictData(null);
+      toast.success("Your local changes have been saved");
+    } else {
+      toast.error("Failed to save local changes. Please try again.");
+    }
+  }, [allTasks, saveTasks]);
+
   const loadTasks = useCallback(async () => {
     setLoading(true);
     let loadedTasks: Task[] = [];
@@ -185,6 +247,11 @@ export default function Home() {
             console.log("Successfully fetched tasks from server.");
             loadedTasks = parseMarkdownTable(data.content);
             localStorage.setItem('markdownContent', data.content);
+            // Track the initial server timestamp
+            if (data.updated_at) {
+              console.log('[Conflict Detection] Initial server timestamp:', data.updated_at);
+              setLastKnownServerTimestamp(data.updated_at);
+            }
           }
         } else {
           serverFetchError = true;
@@ -229,6 +296,12 @@ export default function Home() {
       loadTasks();
     }
   }, [isLoaded, isSignedIn, loadTasks]);
+
+  // Persist header collapse state to localStorage
+  useEffect(() => {
+    localStorage.setItem('isHeaderCollapsed', String(isHeaderCollapsed));
+    console.log('Header collapse state saved to localStorage:', isHeaderCollapsed);
+  }, [isHeaderCollapsed]);
   
   // Effect to sync local tasks on sign-in
   // Only uploads local tasks if server has no tasks (new user)
@@ -634,6 +707,22 @@ export default function Home() {
     }
   };
 
+  // Handle category merging
+  const handleMergeCategories = useCallback((categoriesToMerge: string[], targetCategory: string) => {
+    console.log(`[Category Merge] Merging categories ${categoriesToMerge.join(', ')} into '${targetCategory}'`);
+    
+    // Update all tasks that have one of the categories to merge
+    const updatedTasks = allTasks.map(task => {
+      if (categoriesToMerge.includes(task.category)) {
+        return { ...task, category: targetCategory };
+      }
+      return task;
+    });
+
+    updateAndSaveTasks(updatedTasks);
+    toast.success(`Successfully merged ${categoriesToMerge.length} categories into "${targetCategory}"`);
+  }, [allTasks, updateAndSaveTasks]);
+
   return (
     <div className="flex flex-col h-screen">
       <header className="border-b relative">
@@ -709,6 +798,9 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsContent value="tasks" className="space-y-3">
                 
                 <div className="mb-3">
                   <div className="flex items-center gap-2 text-sm mb-1">
@@ -860,12 +952,20 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Pagination controls */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mb-3 p-2 bg-muted/30 rounded-md">
-                    <div className="text-sm text-gray-600">
-                      Showing {startIndex + 1}-{Math.min(endIndex, sortedActiveTasks.length)} of {sortedActiveTasks.length} tasks
-                    </div>
+                {/* Tabs and Pagination controls */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3 p-2 bg-muted/30 rounded-md">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <TabsList className="h-9">
+                      <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                      <TabsTrigger value="categories">Categories</TabsTrigger>
+                    </TabsList>
+                    {totalPages > 1 && (
+                      <div className="text-sm text-gray-600">
+                        Showing {startIndex + 1}-{Math.min(endIndex, sortedActiveTasks.length)} of {sortedActiveTasks.length} tasks
+                      </div>
+                    )}
+                  </div>
+                  {totalPages > 1 && (
                     <div className="flex items-center gap-2">
                       <Button
                         onClick={() => setCurrentPage(1)}
@@ -903,8 +1003,8 @@ export default function Home() {
                         Last
                       </Button>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Today Tasks Section */}
                 {todayTasks.length > 0 && (
@@ -1130,6 +1230,15 @@ export default function Home() {
                     </Card>
                   </div>
                 )}
+                  </TabsContent>
+
+                  <TabsContent value="categories" className="mt-4">
+                    <CategoriesManager 
+                      tasks={allTasks} 
+                      onMergeCategories={handleMergeCategories}
+                    />
+                  </TabsContent>
+                </Tabs>
               </>
             )}
           </>
