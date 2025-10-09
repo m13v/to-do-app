@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Undo, Redo } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, ChevronUp, Undo, Redo } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task } from '@/lib/markdown-parser';
 import TaskRow from '@/components/TaskRow';
@@ -68,6 +69,7 @@ export default function Home() {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [recentDiff, setRecentDiff] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
@@ -76,12 +78,23 @@ export default function Home() {
   const [exportableMarkdown, setExportableMarkdown] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  // Header collapse state
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
-  const filteredAllTasks = useMemo(() => allTasks.filter(task => 
-    task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.task.toLowerCase().includes(searchQuery.toLowerCase())
-  ), [allTasks, searchQuery]);
+  
+  // Extract unique categories for the filter dropdown
+  const uniqueCategories = useMemo(() => {
+    const categories = new Set(allTasks.map(task => task.category.trim()).filter(cat => cat !== ''));
+    return Array.from(categories).sort();
+  }, [allTasks]);
+
+  const filteredAllTasks = useMemo(() => allTasks.filter(task => {
+    const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          task.task.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  }), [allTasks, searchQuery, categoryFilter]);
 
   const saveTasks = useCallback(async (tasksToSave: Task[], forceSync = false): Promise<boolean> => {
     setSaving(true);
@@ -471,10 +484,12 @@ export default function Home() {
     }
   }, [sortField, sortDirection]);
 
-  const filteredActiveTasks = useMemo(() => activeTasks.filter(task => 
-    task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.task.toLowerCase().includes(searchQuery.toLowerCase())
-  ), [activeTasks, searchQuery]);
+  const filteredActiveTasks = useMemo(() => activeTasks.filter(task => {
+    const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          task.task.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  }), [activeTasks, searchQuery, categoryFilter]);
 
   const sortedActiveTasks = useMemo(() => {
     const sortableTasks = [...filteredActiveTasks];
@@ -557,16 +572,29 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="flex items-center justify-between p-4 border-b">
-        <AnimatedTitle />
-        <SignedIn>
-          <UserButton afterSignOutUrl="/"/>
-        </SignedIn>
-        <SignedOut>
-          <SignInButton mode="modal">
-            <Button variant="outline">Sign In to Save</Button>
-          </SignInButton>
-        </SignedOut>
+      <header className="border-b relative">
+        {!isHeaderCollapsed && (
+          <div className="flex items-center justify-between p-4">
+            <AnimatedTitle />
+            <SignedIn>
+              <UserButton afterSignOutUrl="/"/>
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button variant="outline">Sign In to Save</Button>
+              </SignInButton>
+            </SignedOut>
+          </div>
+        )}
+        <Button
+          onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+          size="sm"
+          variant="ghost"
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 h-4 w-8 p-0 bg-background border border-border rounded-full shadow-sm hover:shadow-md z-10"
+          aria-label={isHeaderCollapsed ? "Expand header" : "Collapse header"}
+        >
+          {isHeaderCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </Button>
       </header>
       <main className="flex-1 overflow-y-auto p-2 md:p-4">
         <SignedOut>
@@ -633,6 +661,19 @@ export default function Home() {
                       className="pl-8 h-9"
                     />
                   </div>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-full md:w-[200px] h-9">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {uniqueCategories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <div className="flex items-center gap-2 justify-end">
                     <Button onClick={() => saveTasks(allTasks)} variant="outline" size="sm" disabled={saving}>
                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}

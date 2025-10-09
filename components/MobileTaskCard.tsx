@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Task } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,8 @@ interface MobileTaskCardProps {
 
 const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelete, onAdd, onPriorityChange }) => {
   const [editedTask, setEditedTask] = useState(task);
+  // Collapse state for the metadata section
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     setEditedTask(task);
@@ -30,21 +32,33 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
   return (
     <Card className={cn("mb-1 rounded-md", task.status === 'done' && 'bg-muted')}>
       <CardContent className="p-2 space-y-2">
-        <Textarea
-          value={editedTask.task}
-          onChange={(e) => setEditedTask(prev => ({...prev, task: e.target.value}))}
-          onBlur={() => {
-            if(editedTask.task !== task.task) {
-              onUpdate(task.id, 'task', editedTask.task);
-            }
-          }}
-          className={cn(
-            "w-full text-sm font-semibold p-1 resize-none border rounded-md shadow-none focus-visible:ring-1",
-            task.status === 'done' && 'line-through'
-          )}
-          rows={Math.max(1, Math.floor(editedTask.task.length / 35))}
-        />
-        <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+        <div className="flex items-start gap-1">
+          <Textarea
+            value={editedTask.task}
+            onChange={(e) => setEditedTask(prev => ({...prev, task: e.target.value}))}
+            onBlur={() => {
+              if(editedTask.task !== task.task) {
+                onUpdate(task.id, 'task', editedTask.task);
+              }
+            }}
+            className={cn(
+              "flex-1 text-sm font-semibold p-1 resize-none border rounded-md shadow-none focus-visible:ring-1",
+              task.status === 'done' && 'line-through'
+            )}
+            rows={Math.max(1, Math.floor(editedTask.task.length / 35))}
+          />
+          <Button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0 flex-shrink-0"
+            aria-label={isCollapsed ? "Expand details" : "Collapse details"}
+          >
+            {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </Button>
+        </div>
+        {!isCollapsed && (
+          <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
           <div className="flex items-center justify-between">
             <NumberStepper
               title="Priority:"
@@ -82,6 +96,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
             </Select>
           </div>
         </div>
+        )}
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
             <strong className="text-sm font-medium text-foreground">Today:</strong>
