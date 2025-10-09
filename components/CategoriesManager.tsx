@@ -94,7 +94,7 @@ export default function CategoriesManager({ tasks, onMergeCategories }: Categori
   return (
     <div className="space-y-4">
       {/* Merge Controls and Stats - Top Bar */}
-      <Card>
+      <Card className="border-0 shadow-none">
         <CardContent className="pt-6">
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
             <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -158,7 +158,7 @@ export default function CategoriesManager({ tasks, onMergeCategories }: Categori
       </Card>
 
       {/* Categories Table */}
-      <Card>
+      <Card className="border-0 shadow-none">
         <CardHeader>
           <CardTitle>All Categories ({categoryStats.length})</CardTitle>
           <CardDescription>
