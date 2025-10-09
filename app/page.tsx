@@ -92,11 +92,20 @@ export default function Home() {
       setIsHeaderCollapsed(true);
     }
   }, []);
+  
+  // Load category filter from localStorage after hydration to avoid hydration mismatch
+  useEffect(() => {
+    const storedFilter = localStorage.getItem('categoryFilter');
+    if (storedFilter) {
+      setCategoryFilter(storedFilter);
+      console.log('Category filter loaded from localStorage:', storedFilter);
+    }
+  }, []);
   // Pagination state - render only 200 tasks at a time for performance
   const [currentPage, setCurrentPage] = useState(1);
   const TASKS_PER_PAGE = 200;
-  // Conflict detection state - track server timestamp to detect concurrent edits
-  const [lastKnownServerTimestamp, setLastKnownServerTimestamp] = useState<string | null>(null);
+  // Conflict detection state - track server content to detect concurrent edits
+  const [lastKnownServerContent, setLastKnownServerContent] = useState<string | null>(null);
   const [conflictDetected, setConflictDetected] = useState(false);
   const [conflictData, setConflictData] = useState<{ serverContent: string; serverTimestamp: string } | null>(null);
   // Tab state for switching between Tasks and Categories views
@@ -136,12 +145,10 @@ export default function Home() {
           }
           return true; // Return true since we saved to localStorage
         }
-        // Track the server timestamp after successful save
-        const data = await response.json();
-        if (data.updated_at) {
-          console.log('[Conflict Detection] Updated local timestamp after save:', data.updated_at);
-          setLastKnownServerTimestamp(data.updated_at);
-        }
+        // Track the server content after successful save
+        await response.json(); // Consume response
+        console.log('[Conflict Detection] Updated local content after save');
+        setLastKnownServerContent(markdown);
         setSyncError(false);
       }
       return true;
@@ -206,8 +213,8 @@ export default function Home() {
     // Update localStorage
     localStorage.setItem('markdownContent', conflictData.serverContent);
     
-    // Update timestamp
-    setLastKnownServerTimestamp(conflictData.serverTimestamp);
+    // Update known server content
+    setLastKnownServerContent(conflictData.serverContent);
     
     // Clear conflict state
     setConflictDetected(false);
@@ -247,11 +254,9 @@ export default function Home() {
             console.log("Successfully fetched tasks from server.");
             loadedTasks = parseMarkdownTable(data.content);
             localStorage.setItem('markdownContent', data.content);
-            // Track the initial server timestamp
-            if (data.updated_at) {
-              console.log('[Conflict Detection] Initial server timestamp:', data.updated_at);
-              setLastKnownServerTimestamp(data.updated_at);
-            }
+            // Track the initial server content
+            console.log('[Conflict Detection] Initial server content stored');
+            setLastKnownServerContent(data.content);
           }
         } else {
           serverFetchError = true;
@@ -289,7 +294,7 @@ export default function Home() {
     setHistory([loadedTasks]);
     setHistoryIndex(0);
     setLoading(false);
-  }, [isSignedIn, saveTasks]);
+  }, [isSignedIn]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -302,6 +307,12 @@ export default function Home() {
     localStorage.setItem('isHeaderCollapsed', String(isHeaderCollapsed));
     console.log('Header collapse state saved to localStorage:', isHeaderCollapsed);
   }, [isHeaderCollapsed]);
+  
+  // Persist category filter to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('categoryFilter', categoryFilter);
+    console.log('Category filter saved to localStorage:', categoryFilter);
+  }, [categoryFilter]);
   
   // Effect to sync local tasks on sign-in
   // Only uploads local tasks if server has no tasks (new user)
@@ -366,7 +377,7 @@ export default function Home() {
 
   // Polling mechanism - check for conflicts every 30 seconds
   useEffect(() => {
-    if (!isSignedIn || loading || !lastKnownServerTimestamp) return;
+    if (!isSignedIn || loading || !lastKnownServerContent) return;
     
     const checkForConflicts = async () => {
       try {
@@ -374,16 +385,34 @@ export default function Home() {
         const response = await fetch('/api/tasks');
         if (response.ok) {
           const data = await response.json();
-          if (data && data.updated_at) {
-            console.log('[Conflict Detection] Server timestamp:', data.updated_at, 'Local timestamp:', lastKnownServerTimestamp);
-            // Check if server timestamp is newer than our last known timestamp
-            if (data.updated_at !== lastKnownServerTimestamp) {
-              console.log('[Conflict Detection] ⚠️ CONFLICT DETECTED - Tasks modified on another device!');
+          if (data && data.content) {
+            // Compare actual content, not timestamps
+            const serverContent = data.content;
+            const currentLocalContent = tasksToMarkdown(allTasks);
+            
+            // Check if server content changed from what we last knew
+            const serverChanged = serverContent !== lastKnownServerContent;
+            // Check if local content changed from what we last knew
+            const localChanged = currentLocalContent !== lastKnownServerContent;
+            
+            console.log('[Conflict Detection] Server changed:', serverChanged, 'Local changed:', localChanged);
+            
+            // Only conflict if BOTH server and local have changed
+            if (serverChanged && localChanged) {
+              console.log('[Conflict Detection] ⚠️ CONFLICT DETECTED - Both server and local have changes!');
               setConflictDetected(true);
               setConflictData({
                 serverContent: data.content,
-                serverTimestamp: data.updated_at
+                serverTimestamp: data.updated_at || new Date().toISOString()
               });
+            } else if (serverChanged && !localChanged) {
+              // Server changed but we haven't - safe to auto-update
+              console.log('[Conflict Detection] Server updated, no local changes - auto-syncing');
+              const serverTasks = parseMarkdownTable(serverContent);
+              setActiveTasks(serverTasks.filter(t => t.status !== 'done'));
+              setDoneTasks(serverTasks.filter(t => t.status === 'done'));
+              localStorage.setItem('markdownContent', serverContent);
+              setLastKnownServerContent(serverContent);
             }
           }
         }
@@ -396,7 +425,7 @@ export default function Home() {
     const intervalId = setInterval(checkForConflicts, 30000);
     
     return () => clearInterval(intervalId);
-  }, [isSignedIn, loading, lastKnownServerTimestamp]);
+  }, [isSignedIn, loading, lastKnownServerContent, allTasks]);
 
   const handleAIPrompt = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
