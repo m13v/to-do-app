@@ -203,14 +203,36 @@ export default function Home() {
   }, [isLoaded, isSignedIn, loadTasks]);
   
   // Effect to sync local tasks on sign-in
+  // Only uploads local tasks if server has no tasks (new user)
+  // Existing users will have their server tasks loaded by loadTasks()
   useEffect(() => {
     if (isSignedIn) {
-      const localMarkdown = localStorage.getItem('markdownContent');
-      if (localMarkdown) {
-        const localTasks = parseMarkdownTable(localMarkdown);
-        console.log("User signed in, syncing local tasks to server...");
-        saveTasks(localTasks, true);
-      }
+      // First check if server already has tasks
+      fetch('/api/tasks')
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('No server tasks');
+        })
+        .then(data => {
+          if (data && data.content) {
+            // Server has tasks - existing user, don't upload from localStorage
+            console.log("Existing user detected, server tasks found. Skipping local upload.");
+          } else {
+            // Server returned empty - treat as new user
+            throw new Error('Server data empty');
+          }
+        })
+        .catch(() => {
+          // Server has no tasks or error - new user, upload local tasks
+          const localMarkdown = localStorage.getItem('markdownContent');
+          if (localMarkdown) {
+            const localTasks = parseMarkdownTable(localMarkdown);
+            console.log("New user detected, syncing local tasks to server...");
+            saveTasks(localTasks, true);
+          }
+        });
     }
   }, [isSignedIn, saveTasks]);
 
