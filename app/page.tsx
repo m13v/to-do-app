@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, ChevronUp, Undo, Redo } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, ChevronUp, Undo, Redo, Check, ChevronsUpDown } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task } from '@/lib/markdown-parser';
 import TaskRow from '@/components/TaskRow';
@@ -70,6 +71,7 @@ export default function Home() {
   const [recentDiff, setRecentDiff] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categoryComboOpen, setCategoryComboOpen] = useState(false);
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
@@ -83,6 +85,10 @@ export default function Home() {
   // Pagination state - render only 200 tasks at a time for performance
   const [currentPage, setCurrentPage] = useState(1);
   const TASKS_PER_PAGE = 200;
+  // Conflict detection state - track server timestamp to detect concurrent edits
+  const [lastKnownServerTimestamp, setLastKnownServerTimestamp] = useState<string | null>(null);
+  const [conflictDetected, setConflictDetected] = useState(false);
+  const [conflictData, setConflictData] = useState<{ serverContent: string; serverTimestamp: string } | null>(null);
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
   
@@ -117,6 +123,12 @@ export default function Home() {
             console.error('Failed to save tasks to server, but tasks are saved in localStorage');
           }
           return true; // Return true since we saved to localStorage
+        }
+        // Track the server timestamp after successful save
+        const data = await response.json();
+        if (data.updated_at) {
+          console.log('[Conflict Detection] Updated local timestamp after save:', data.updated_at);
+          setLastKnownServerTimestamp(data.updated_at);
         }
         setSyncError(false);
       }
@@ -278,6 +290,40 @@ export default function Home() {
     }, 10000);
     return () => clearTimeout(handler);
   }, [allTasks, loading, user, saveTasks, syncError]);
+
+  // Polling mechanism - check for conflicts every 30 seconds
+  useEffect(() => {
+    if (!isSignedIn || loading || !lastKnownServerTimestamp) return;
+    
+    const checkForConflicts = async () => {
+      try {
+        console.log('[Conflict Detection] Polling server for changes...');
+        const response = await fetch('/api/tasks');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.updated_at) {
+            console.log('[Conflict Detection] Server timestamp:', data.updated_at, 'Local timestamp:', lastKnownServerTimestamp);
+            // Check if server timestamp is newer than our last known timestamp
+            if (data.updated_at !== lastKnownServerTimestamp) {
+              console.log('[Conflict Detection] ⚠️ CONFLICT DETECTED - Tasks modified on another device!');
+              setConflictDetected(true);
+              setConflictData({
+                serverContent: data.content,
+                serverTimestamp: data.updated_at
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[Conflict Detection] Error checking for conflicts:', error);
+      }
+    };
+
+    // Check immediately, then every 30 seconds
+    const intervalId = setInterval(checkForConflicts, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [isSignedIn, loading, lastKnownServerTimestamp]);
 
   const handleAIPrompt = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -635,6 +681,34 @@ export default function Home() {
                     <button onClick={retrySync} className="ml-2 underline text-red-700">Retry</button>
                   </div>
                 )}
+
+                {conflictDetected && (
+                  <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 px-4 py-3 rounded mb-2" role="alert">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                      <div>
+                        <p className="font-bold">⚠️ Conflict Detected</p>
+                        <p className="text-sm">Your tasks were modified on another device. What would you like to do?</p>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button 
+                          onClick={handleReloadFromServer} 
+                          variant="outline" 
+                          size="sm"
+                          className="bg-white hover:bg-gray-50"
+                        >
+                          Reload (Use Server Data)
+                        </Button>
+                        <Button 
+                          onClick={handleKeepLocalData} 
+                          variant="default" 
+                          size="sm"
+                        >
+                          Keep Mine (Overwrite Server)
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="mb-3">
                   <div className="flex items-center gap-2 text-sm mb-1">
@@ -679,19 +753,58 @@ export default function Home() {
                       className="pl-8 h-9"
                     />
                   </div>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-full md:w-[200px] h-9">
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {uniqueCategories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={categoryComboOpen} onOpenChange={setCategoryComboOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={categoryComboOpen}
+                        className="w-full md:w-[200px] h-9 justify-between"
+                      >
+                        {categoryFilter === 'all' 
+                          ? 'All Categories' 
+                          : uniqueCategories.find((cat) => cat === categoryFilter) || 'All Categories'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search categories..." />
+                        <CommandList>
+                          <CommandEmpty>No category found.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              value="all"
+                              onSelect={() => {
+                                setCategoryFilter('all');
+                                setCategoryComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={categoryFilter === 'all' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              All Categories
+                            </CommandItem>
+                            {uniqueCategories.map((category) => (
+                              <CommandItem
+                                key={category}
+                                value={category}
+                                onSelect={(currentValue) => {
+                                  setCategoryFilter(currentValue);
+                                  setCategoryComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={categoryFilter === category ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                                />
+                                {category}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex items-center gap-2 justify-end">
                     <Button onClick={() => saveTasks(allTasks)} variant="outline" size="sm" disabled={saving}>
                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}

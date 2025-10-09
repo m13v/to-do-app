@@ -21,7 +21,7 @@ export async function GET() {
     }
     const { data, error } = await supabase
       .from('todoapp_tasks')
-      .select('content')
+      .select('content, updated_at')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -48,13 +48,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { content } = await request.json();
+    const timestamp = new Date().toISOString();
     const { error } = await supabase
       .from('todoapp_tasks')
       .upsert([
         {
           user_id: userId,
           content,
-          updated_at: new Date().toISOString(),
+          updated_at: timestamp,
         },
       ], { onConflict: 'user_id' });
     if (error) {
@@ -63,7 +64,8 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: 'Failed to save tasks' }, { status: 500 });
     }
-    return NextResponse.json({ success: true });
+    // Return the timestamp so frontend can track it
+    return NextResponse.json({ success: true, updated_at: timestamp });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error saving tasks:', error);

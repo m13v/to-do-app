@@ -2,42 +2,227 @@
 > todo-table-app@0.1.0 dev
 > next dev --turbopack
 
- ⚠ Port 3000 is in use, using available port 3002 instead.
    ▲ Next.js 15.3.3 (Turbopack)
-   - Local:        http://localhost:3002
-   - Network:      http://10.6.105.22:3002
+   - Local:        http://localhost:3000
+   - Network:      http://10.6.224.20:3000
    - Environments: .env.local
 
  ✓ Starting...
  ⚠ Invalid next.config.ts options detected: 
  ⚠     Unrecognized key(s) in object: 'api'
- ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next- ○ Compiling / ...
- ✓ Compiled / in 1032ms
- GET / 200 in [?25h
- ✓ Compiled /favicon.ico in 129ms
- GET /favicon.ico?favicon.ff4d1693.ico 200 in 358ms
- ✓ Compiled /api/prompts in 209ms
- GET /api/prompts 401 in 260ms
- GET /api/prompts 401 in 17ms
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- ✓ Compiled in 51ms
- GET / 200 in 213ms
- GET /favicon.ico?favicon.ff4d1693.ico 200 in 215ms
- GET /api/prompts 401 in 16ms
- GET /api/prompts 401 in 15ms
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ✓ Compiled middleware in 121ms
+ ✓ Ready in 699ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1196ms
+ GET / 200 in 1422ms
+ ✓ Compiled /favicon.ico in 154ms
+ GET /favicon.ico?favicon.ff4d1693.ico 200 in 387ms
+ ✓ Compiled /api/prompts in 261ms
+ GET /api/prompts 401 in 318ms
+ GET /api/prompts 401 in 19ms
+ ✓ Compiled in 64ms
+ GET /api/prompts 401 in 19ms
+ GET /api/prompts 401 in 19ms
+ ✓ Compiled in 50ms
+ ✓ Compiled in 75ms
+ ✓ Compiled in 62ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ✓ Compiled /_error in 364ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.hkxwxiq2yo5'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.hkxwxiq2yo5'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.kxnhkv5uy3'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.kxnhkv5uy3'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.n7jpldb41wd'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.n7jpldb41wd'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.yzfr71y703j'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.yzfr71y703j'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.eluu0s0na9v'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.eluu0s0na9v'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.d5nmkei785g'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.d5nmkei785g'
+}
+ ✓ Compiled in 53ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.jvb3ynweorr'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.jvb3ynweorr'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.xufjhvfsnxl'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.xufjhvfsnxl'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.zczkkwe7j2d'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.zczkkwe7j2d'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.fe13qkz5asp'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.fe13qkz5asp'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.3jmexej6opo'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.3jmexej6opo'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.n0f1xgn5mn'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.n0f1xgn5mn'
+}
+ ✓ Compiled in 56ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.3yw370s92f1'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.3yw370s92f1'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.1ceasnd6eto'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.1ceasnd6eto'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.tpm1r94yyxp'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.tpm1r94yyxp'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.u7lo4f1sj6m'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.u7lo4f1sj6m'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.xszjongt0am'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.xszjongt0am'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.ypfojfxm2o'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.ypfojfxm2o'
+}
  ✓ Compiled in 47ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
  ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'] {
   errno: -2,
   code: 'ENOENT',
   syscall: 'open',
   path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'
 }
- ✓ Compiled /_error in 328ms
- ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.gd7kn9kmpj'] {
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.4kugqgp85yx'] {
   errno: -2,
   code: 'ENOENT',
   syscall: 'open',
-  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.gd7kn9kmpj'
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.4kugqgp85yx'
 }
 [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'] {
   errno: -2,
@@ -45,17 +230,78 @@
   syscall: 'open',
   path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'
 }
- ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.1g6488o08pc'] {
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.buxwa89pbr'] {
   errno: -2,
   code: 'ENOENT',
   syscall: 'open',
-  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.1g6488o08pc'
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.buxwa89pbr'
 }
-[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.eppurs5xkrv'] {
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.nu3tfleaf0m'] {
   errno: -2,
   code: 'ENOENT',
   syscall: 'open',
-  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.eppurs5xkrv'
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.nu3tfleaf0m'
+}
+ ✓ Compiled in 74ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.9ib8djpdt9e'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.9ib8djpdt9e'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.xc0gjc4gbs'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.xc0gjc4gbs'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.vzr2pg0an9'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.vzr2pg0an9'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.h8l2cuecdi'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.h8l2cuecdi'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/api/prompts/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.nm4s6d3j65'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.nm4s6d3j65'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.w3zegacs0c'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.w3zegacs0c'
 }
  ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
   errno: -2,
@@ -63,4 +309,40 @@
   syscall: 'open',
   path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
 }
-[?25h
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.8ag3hevvg23'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.8ag3hevvg23'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.zhyqjvawuf'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.zhyqjvawuf'
+}
+[Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.dqybvm0n8z5'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/static/development/_buildManifest.js.tmp.dqybvm0n8z5'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/matthewdi/to-do-app/todo-table-app/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+ ✓ Compiled in 147ms
