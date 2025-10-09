@@ -97,10 +97,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
             task.status === 'done' && "text-muted-foreground line-through"
           )}
         >
-      <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab px-0.5">
+      <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab">
         {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
           </TableCell>
-      <TableCell className="py-0.5 px-0.5">
+      <TableCell>
         <NumberStepper
           value={editedTask.priority}
           onChange={(newVal) => setEditedTask(prev => ({ ...prev, priority: newVal }))}
@@ -111,19 +111,19 @@ const TaskRow: React.FC<TaskRowProps> = ({
           }}
         />
           </TableCell>
-      <TableCell className="font-medium py-0.5 px-0">
+      <TableCell className="font-medium">
             <Input
               id={`cell-${index}-0`}
               value={editedTask.category}
               onChange={(e) => handleChange('category', e.target.value)}
               onBlur={() => handleBlur('category')}
               onKeyDown={(e) => handleKeyDown(e, 0)}
-          className="h-6 py-0 px-1"
+          className="h-5 py-0 px-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </TableCell>
-      <TableCell className="py-0.5 px-1">
+      <TableCell>
             <Select value={editedTask.status} onValueChange={(value) => handleChange('status', value)}>
-          <SelectTrigger id={`cell-${index}-1`} onFocus={() => focusCell(index, 1)} className="h-6 py-0 px-2">
+          <SelectTrigger id={`cell-${index}-1`} onFocus={() => focusCell(index, 1)} className="h-5 py-0 px-2 border-0 focus:ring-0">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -133,18 +133,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
               </SelectContent>
             </Select>
           </TableCell>
-      <TableCell className="py-0.5 px-1">
+      <TableCell>
             <Textarea
               id={`cell-${index}-2`}
               value={editedTask.task}
               onChange={(e) => handleChange('task', e.target.value)}
               onBlur={() => handleBlur('task')}
               onKeyDown={(e) => handleKeyDown(e, 2)}
-          className="min-h-[24px] py-0.5 resize-none"
+          className="min-h-[20px] py-0 px-1 border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
             />
           </TableCell>
-      <TableCell className="py-0.5 px-1 text-center">
+      <TableCell className="text-center">
             <Checkbox
               id={`cell-${index}-3`}
               checked={!!editedTask.today}
@@ -158,13 +158,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
               aria-label="Mark as today"
             />
           </TableCell>
-      <TableCell className="py-0.5 px-0 text-right">
+      <TableCell className="text-right">
         <div className="flex items-center justify-end gap-0">
               <Button
                 onClick={() => handleAddTask(task.id)}
                 size="sm"
                 variant="ghost"
-                className="h-6 w-6 p-0"
+                className="h-5 w-5 p-0"
                 title="Add task below"
               >
                 <Plus className="h-3 w-3" />
@@ -173,7 +173,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 onClick={() => handleDeleteTask(task.id)}
                 size="sm"
                 variant="ghost"
-                className="h-6 w-6 p-0"
+                className="h-5 w-5 p-0"
                 title="Delete"
               >
                 <X className="h-3 w-3" />

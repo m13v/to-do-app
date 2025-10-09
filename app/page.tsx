@@ -80,6 +80,9 @@ export default function Home() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   // Header collapse state
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  // Pagination state - render only 200 tasks at a time for performance
+  const [currentPage, setCurrentPage] = useState(1);
+  const TASKS_PER_PAGE = 200;
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
   
@@ -513,6 +516,21 @@ export default function Home() {
     return sortableTasks;
   }, [filteredActiveTasks, sortField, sortDirection]);
 
+  // Reset to page 1 when filter/search/sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter, sortField, sortDirection]);
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(sortedActiveTasks.length / TASKS_PER_PAGE);
+  const startIndex = (currentPage - 1) * TASKS_PER_PAGE;
+  const endIndex = startIndex + TASKS_PER_PAGE;
+  
+  // Only render tasks for the current page
+  const paginatedTasks = useMemo(() => {
+    return sortedActiveTasks.slice(startIndex, endIndex);
+  }, [sortedActiveTasks, startIndex, endIndex]);
+
 
   const getSortIcon = useCallback((field: SortField) => {
     if (sortField !== field) return <ArrowUpDown className="h-3 w-3" />;
@@ -729,6 +747,52 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* Pagination controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mb-3 p-2 bg-muted/30 rounded-md">
+                    <div className="text-sm text-gray-600">
+                      Showing {startIndex + 1}-{Math.min(endIndex, sortedActiveTasks.length)} of {sortedActiveTasks.length} tasks
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                        size="sm"
+                        variant="outline"
+                      >
+                        First
+                      </Button>
+                      <Button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm px-2">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <Button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Next
+                      </Button>
+                      <Button
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Last
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Today Tasks Section */}
                 {todayTasks.length > 0 && (
                   <Card className="border-2 border-primary">
@@ -814,9 +878,6 @@ export default function Home() {
                 )}
 
                 <Card>
-                  <CardHeader className="py-2">
-                    <CardTitle className="text-sm">Task List ({filteredActiveTasks.length} tasks)</CardTitle>
-                  </CardHeader>
                   <CardContent className="py-2">
                     <DragDropContext onDragEnd={handleDragEnd}>
                       {isDesktop ? (
@@ -853,7 +914,7 @@ export default function Home() {
                             <Droppable droppableId="tasks">
                               {(provided) => (
                                 <TableBody ref={provided.innerRef} {...provided.droppableProps}>
-                                  {sortedActiveTasks.map((task, index) => (
+                                  {paginatedTasks.map((task, index) => (
                                     <TaskRow
                                       key={task.id}
                                       task={task}
@@ -875,7 +936,7 @@ export default function Home() {
                         <Droppable droppableId="tasks-mobile" isDropDisabled={true}>
                           {(provided) => (
                             <div ref={provided.innerRef} {...provided.droppableProps}>
-                              {sortedActiveTasks.map((task) => (
+                              {paginatedTasks.map((task) => (
                                 <MobileTaskCard
                                   key={task.id}
                                   task={task}
