@@ -69,6 +69,18 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                 onUpdate(task.id, 'task', editedTask.task);
               }
             }}
+            onKeyDown={(e) => {
+              // Enter without Shift creates a new task (Shift+Enter adds new line)
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                // Save any pending changes first
+                if(editedTask.task !== task.task) {
+                  onUpdate(task.id, 'task', editedTask.task);
+                }
+                // Create new task (same as clicking Plus icon)
+                onAdd(task.id);
+              }
+            }}
             className={cn(
               "flex-1 text-sm font-semibold p-1 resize-none border rounded-md shadow-none focus-visible:ring-1",
               task.status === 'done' && 'line-through'

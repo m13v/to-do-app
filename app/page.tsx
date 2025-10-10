@@ -85,6 +85,8 @@ export default function Home() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   // Header collapse state - initialize to false to avoid hydration mismatch, then load from localStorage
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  // Footer collapse state - initialize to false to avoid hydration mismatch, then load from localStorage
+  const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
   // Selected tasks state - track which tasks are selected via checkbox
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   
@@ -93,6 +95,14 @@ export default function Home() {
     const stored = localStorage.getItem('isHeaderCollapsed');
     if (stored === 'true') {
       setIsHeaderCollapsed(true);
+    }
+  }, []);
+  
+  // Load footer collapse state from localStorage after hydration
+  useEffect(() => {
+    const stored = localStorage.getItem('isFooterCollapsed');
+    if (stored === 'true') {
+      setIsFooterCollapsed(true);
     }
   }, []);
   
@@ -310,6 +320,12 @@ export default function Home() {
     localStorage.setItem('isHeaderCollapsed', String(isHeaderCollapsed));
     console.log('Header collapse state saved to localStorage:', isHeaderCollapsed);
   }, [isHeaderCollapsed]);
+  
+  // Persist footer collapse state to localStorage
+  useEffect(() => {
+    localStorage.setItem('isFooterCollapsed', String(isFooterCollapsed));
+    console.log('Footer collapse state saved to localStorage:', isFooterCollapsed);
+  }, [isFooterCollapsed]);
   
   // Persist category filter to localStorage whenever it changes
   useEffect(() => {
@@ -1369,16 +1385,29 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="p-4 border-t text-center text-sm text-gray-500">
-        Open source on{' '}
-        <a
-          href="https://github.com/m13v/to-do-app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-gray-900"
+      <footer className="border-t relative">
+        {!isFooterCollapsed && (
+          <div className="p-4 text-center text-sm text-gray-500">
+            Open source on{' '}
+            <a
+              href="https://github.com/m13v/to-do-app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-900"
+            >
+              GitHub
+            </a>
+          </div>
+        )}
+        <Button
+          onClick={() => setIsFooterCollapsed(!isFooterCollapsed)}
+          size="sm"
+          variant="ghost"
+          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-8 p-0 bg-background border border-border rounded-full shadow-sm hover:shadow-md z-10"
+          aria-label={isFooterCollapsed ? "Expand footer" : "Collapse footer"}
         >
-          GitHub
-        </a>
+          {isFooterCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
       </footer>
 
       <Dialog open={!!aiGeneratedContent} onOpenChange={(isOpen) => !isOpen && handleCancelAIChanges()}>
