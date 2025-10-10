@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, ChevronUp, Undo, Redo, Check, ChevronsUpDown } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task } from '@/lib/markdown-parser';
@@ -84,6 +85,8 @@ export default function Home() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   // Header collapse state - initialize to false to avoid hydration mismatch, then load from localStorage
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  // Selected tasks state - track which tasks are selected via checkbox
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   
   // Load header collapse state from localStorage after hydration
   useEffect(() => {
@@ -736,6 +739,37 @@ export default function Home() {
     }
   };
 
+  // Handle selecting/deselecting individual tasks
+  const handleToggleTaskSelection = useCallback((taskId: string) => {
+    setSelectedTaskIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Handle selecting/deselecting all tasks in current view
+  const handleToggleSelectAll = useCallback((tasksList: Task[]) => {
+    const allIds = tasksList.map(t => t.id);
+    const allSelected = allIds.every(id => selectedTaskIds.has(id));
+    
+    setSelectedTaskIds(prev => {
+      const newSet = new Set(prev);
+      if (allSelected) {
+        // Deselect all from this list
+        allIds.forEach(id => newSet.delete(id));
+      } else {
+        // Select all from this list
+        allIds.forEach(id => newSet.add(id));
+      }
+      return newSet;
+    });
+  }, [selectedTaskIds]);
+
   // Handle category merging
   const handleMergeCategories = useCallback((categoriesToMerge: string[], targetCategory: string) => {
     console.log(`[Category Merge] Merging categories ${categoriesToMerge.join(', ')} into '${targetCategory}'`);
@@ -1048,6 +1082,13 @@ export default function Home() {
                             <Table className="w-full">
                               <TableHeader>
                                 <TableRow>
+                                  <TableHead className="px-0.5 w-8">
+                                    <Checkbox
+                                      checked={todayTasks.length > 0 && todayTasks.every(t => selectedTaskIds.has(t.id))}
+                                      onCheckedChange={() => handleToggleSelectAll(todayTasks)}
+                                      aria-label="Select all today tasks"
+                                    />
+                                  </TableHead>
                                   <TableHead className="px-0.5"></TableHead>
                                   <TableHead className="px-0.5">
                                     <TooltipProvider>
@@ -1087,6 +1128,8 @@ export default function Home() {
                                         handleAddTask={() => handleAddTask(task.id)}
                                         handleDeleteTask={() => handleDeleteTask(task.id)}
                                         focusCell={focusCell}
+                                        isSelected={selectedTaskIds.has(task.id)}
+                                        onToggleSelect={handleToggleTaskSelection}
                                       />
                                     ))}
                                     {provided.placeholder}
@@ -1107,6 +1150,8 @@ export default function Home() {
                                     onDelete={handleDeleteTask}
                                     onAdd={() => handleAddTask(task.id)}
                                     onPriorityChange={handlePriorityChange}
+                                    isSelected={selectedTaskIds.has(task.id)}
+                                    onToggleSelect={handleToggleTaskSelection}
                                   />
                                 ))}
                                 {provided.placeholder}
@@ -1127,6 +1172,13 @@ export default function Home() {
                           <Table className="w-full">
                             <TableHeader>
                               <TableRow>
+                                <TableHead className="px-0.5 w-8">
+                                  <Checkbox
+                                    checked={paginatedTasks.length > 0 && paginatedTasks.every(t => selectedTaskIds.has(t.id))}
+                                    onCheckedChange={() => handleToggleSelectAll(paginatedTasks)}
+                                    aria-label="Select all tasks"
+                                  />
+                                </TableHead>
                                 <TableHead className="px-0.5"></TableHead>
                                 <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                    <TooltipProvider>
@@ -1166,6 +1218,8 @@ export default function Home() {
                                       handleAddTask={() => handleAddTask(task.id)}
                                       handleDeleteTask={() => handleDeleteTask(task.id)}
                                       focusCell={focusCell}
+                                      isSelected={selectedTaskIds.has(task.id)}
+                                      onToggleSelect={handleToggleTaskSelection}
                                     />
                                   ))}
                                   {provided.placeholder}
@@ -1186,6 +1240,8 @@ export default function Home() {
                                   onDelete={handleDeleteTask}
                                   onAdd={() => handleAddTask(task.id)}
                                   onPriorityChange={handlePriorityChange}
+                                  isSelected={selectedTaskIds.has(task.id)}
+                                  onToggleSelect={handleToggleTaskSelection}
                                 />
                               ))}
                               {provided.placeholder}
@@ -1212,6 +1268,13 @@ export default function Home() {
                             <Table className="w-full">
                               <TableHeader>
                                 <TableRow>
+                                  <TableHead className="px-0.5 w-8">
+                                    <Checkbox
+                                      checked={doneTasks.length > 0 && doneTasks.every(t => selectedTaskIds.has(t.id))}
+                                      onCheckedChange={() => handleToggleSelectAll(doneTasks)}
+                                      aria-label="Select all archived tasks"
+                                    />
+                                  </TableHead>
                                   <TableHead className="px-0.5"></TableHead>
                                   <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
                                     <TooltipProvider>
@@ -1249,6 +1312,8 @@ export default function Home() {
                                     handleAddTask={() => handleAddTask(task.id)}
                                     handleDeleteTask={() => handleDeleteTask(task.id)}
                                     focusCell={() => {}}
+                                    isSelected={selectedTaskIds.has(task.id)}
+                                    onToggleSelect={handleToggleTaskSelection}
                                   />
                                 ))}
                               </TableBody>
