@@ -34,7 +34,8 @@ export function parseMarkdownTable(markdown: string): Task[] {
       id: `${Date.now()}-${Math.random()}-${index}`,
       priority: priorityIndex !== -1 ? parseInt(getValue(priorityIndex), 10) || (index + 1) : (index + 1),
       category: getValue(categoryIndex),
-      task: getValue(taskIndex),
+      // Convert <br> tags back to newlines for multi-line task support
+      task: getValue(taskIndex).replace(/<br\s*\/?>/gi, '\n'),
       status: getValue(statusIndex),
       today: todayIndex !== -1 ? getValue(todayIndex).toLowerCase() === 'yes' : false,
     };
@@ -49,7 +50,9 @@ export function tasksToMarkdown(tasks: Task[]): string {
   const sortedTasks = [...tasks].sort((a, b) => a.priority - b.priority);
 
   for (const task of sortedTasks) {
-    markdown += `| ${task.priority} | ${task.category} | ${task.task} | ${task.status} | ${task.today ? 'yes' : ''} |\n`;
+    // Convert newlines to <br> tags for multi-line task support in markdown tables
+    const taskWithBreaks = task.task.replace(/\n/g, '<br>');
+    markdown += `| ${task.priority} | ${task.category} | ${taskWithBreaks} | ${task.status} | ${task.today ? 'yes' : ''} |\n`;
   }
   
   return markdown;
