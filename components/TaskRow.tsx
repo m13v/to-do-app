@@ -27,6 +27,8 @@ interface TaskRowProps {
   handleAddTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
   focusCell: (rowIndex: number, colIndex: number) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (taskId: string) => void;
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({
@@ -38,6 +40,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
   handleAddTask,
   handleDeleteTask,
   focusCell,
+  isSelected = false,
+  onToggleSelect,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
 
@@ -97,6 +101,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
             task.status === 'done' && "text-muted-foreground line-through"
           )}
         >
+      <TableCell className="w-8">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onToggleSelect?.(task.id)}
+          aria-label={`Select task ${task.task}`}
+        />
+      </TableCell>
       <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab">
         {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
           </TableCell>
@@ -129,6 +140,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <SelectContent>
                 <SelectItem value="to_do">To Do</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="waiting">Waiting</SelectItem>
                 <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>
