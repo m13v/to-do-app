@@ -18,9 +18,11 @@ interface MobileTaskCardProps {
   onDelete: (id: string) => void;
   onAdd: (id: string) => void;
   onPriorityChange: (id: string, newPriority: number) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (taskId: string) => void;
 }
 
-const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelete, onAdd, onPriorityChange }) => {
+const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelete, onAdd, onPriorityChange, isSelected = false, onToggleSelect }) => {
   const [editedTask, setEditedTask] = useState(task);
   // Collapse state for the metadata section
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -33,6 +35,12 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
     <Card className={cn("mb-1 rounded-md", task.status === 'done' && 'bg-muted')}>
       <CardContent className="p-2 space-y-2">
         <div className="flex items-start gap-1">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect?.(task.id)}
+            aria-label={`Select task ${task.task}`}
+            className="mt-1"
+          />
           <Textarea
             value={editedTask.task}
             onChange={(e) => setEditedTask(prev => ({...prev, task: e.target.value}))}
@@ -91,6 +99,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
               <SelectContent>
                 <SelectItem value="to_do">To Do</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="waiting">Waiting</SelectItem>
                 <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>
