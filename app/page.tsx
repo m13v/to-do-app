@@ -556,7 +556,14 @@ export default function Home() {
     
     newTasks.splice(destinationIndex, 0, movedItem);
 
-    updateAndSaveTasks([...newTasks, ...doneTasks]);
+    // Recalculate priority values based on the new order to maintain visual position
+    // Assign sequential priorities starting from 1
+    const tasksWithUpdatedPriorities = newTasks.map((task, index) => ({
+      ...task,
+      priority: index + 1
+    }));
+
+    updateAndSaveTasks([...tasksWithUpdatedPriorities, ...doneTasks]);
   };
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
