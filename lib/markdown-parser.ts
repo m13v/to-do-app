@@ -30,9 +30,14 @@ export function parseMarkdownTable(markdown: string): Task[] {
     // Helper to get value from parts array by header index
     const getValue = (index: number) => (index !== -1 && parts[index + 1] !== undefined) ? parts[index + 1] : '';
 
+    // Parse priority: handle 0 explicitly since it's falsy but valid
+    const priorityValue = getValue(priorityIndex);
+    const parsedPriority = priorityValue !== '' ? parseInt(priorityValue, 10) : NaN;
+    const priority = !isNaN(parsedPriority) ? parsedPriority : (index + 1);
+    
     return {
       id: `${Date.now()}-${Math.random()}-${index}`,
-      priority: priorityIndex !== -1 ? parseInt(getValue(priorityIndex), 10) || (index + 1) : (index + 1),
+      priority,
       category: getValue(categoryIndex),
       // Convert <br> tags back to newlines for multi-line task support
       task: getValue(taskIndex).replace(/<br\s*\/?>/gi, '\n'),

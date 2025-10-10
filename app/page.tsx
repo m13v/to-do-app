@@ -543,27 +543,44 @@ export default function Home() {
     if (!result.destination || result.destination.index === result.source.index) {
       return;
     }
-
-    const newTasks = Array.from(activeTasks);
-    const movedItem = sortedActiveTasks.find((t, i) => i === result.source.index);
-    if (!movedItem) return;
-
-    const sourceIndex = newTasks.findIndex(t => t.id === movedItem.id);
-    newTasks.splice(sourceIndex, 1);
-
-    const destinationItem = sortedActiveTasks.find((t, i) => i === result.destination!.index);
-    const destinationIndex = destinationItem ? newTasks.findIndex(t => t.id === destinationItem.id) : newTasks.length;
+ 
+    // Fix pagination bug: indices from drag events are relative to paginatedTasks (current page)
+    // We need to adjust them to get the actual position in sortedActiveTasks
+    const sourceIndexInSorted = startIndex + result.source.index;
+    const destIndexInSorted = startIndex + result.destination.index;
+  
+    // Work with the SORTED array that matches the visual order users see
+    // This ensures priority reassignments match the actual visual order
+    const newTasks = Array.from(sortedActiveTasks);
+    const movedItem = newTasks[sourceIndexInSorted];
     
-    newTasks.splice(destinationIndex, 0, movedItem);
-
-    // Recalculate priority values based on the new order to maintain visual position
-    // Assign sequential priorities starting from 1
-    const tasksWithUpdatedPriorities = newTasks.map((task, index) => ({
-      ...task,
-      priority: index + 1
-    }));
-
-    updateAndSaveTasks([...tasksWithUpdatedPriorities, ...doneTasks]);
+    if (!movedItem) {
+      return;
+    }
+  
+    // Calculate new priority for the dragged task based on its destination neighbors
+    // Only update the dragged task's priority, don't touch others
+    let newPriority: number;
+    
+    if (destIndexInSorted === 0) {
+      // Moving to the top - set priority lower than first task
+      newPriority = newTasks[0].priority - 1;
+    } else if (destIndexInSorted >= newTasks.length - 1) {
+      // Moving to the bottom - set priority higher than last task
+      newPriority = newTasks[newTasks.length - 1].priority + 1;
+    } else {
+      // Moving between two tasks - set priority to average of neighbors
+      const beforeTask = newTasks[destIndexInSorted - (destIndexInSorted > sourceIndexInSorted ? 0 : 1)];
+      const afterTask = newTasks[destIndexInSorted + (destIndexInSorted > sourceIndexInSorted ? 1 : 0)];
+      newPriority = Math.floor((beforeTask.priority + afterTask.priority) / 2);
+    }
+    
+    // Update only the dragged task with its new priority
+    const updatedTasks = activeTasks.map(task => 
+      task.id === movedItem.id ? { ...task, priority: newPriority } : task
+    );
+  
+    updateAndSaveTasks([...updatedTasks, ...doneTasks]);
   };
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
@@ -1122,7 +1139,7 @@ export default function Home() {
                                   <TableHead className="px-0.5 text-right" title="Actions">Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
-                              <Droppable droppableId="today-tasks" isDropDisabled={true}>
+                              <Droppable droppableId="today-tasks">
                                 {(provided) => (
                                   <TableBody ref={provided.innerRef} {...provided.droppableProps}>
                                     {todayTasks.map((task, idx) => (
@@ -1146,13 +1163,14 @@ export default function Home() {
                             </Table>
                           </div>
                         ) : (
-                          <Droppable droppableId="today-tasks-mobile" isDropDisabled={true}>
+                          <Droppable droppableId="today-tasks-mobile">
                             {(provided) => (
                               <div ref={provided.innerRef} {...provided.droppableProps}>
-                                {todayTasks.map((task) => (
+                                {todayTasks.map((task, index) => (
                                   <MobileTaskCard
                                     key={task.id}
                                     task={task}
+                                    index={index}
                                     onUpdate={handleTaskUpdate}
                                     onDelete={handleDeleteTask}
                                     onAdd={() => handleAddTask(task.id)}
@@ -1236,13 +1254,14 @@ export default function Home() {
                           </Table>
                         </div>
                       ) : (
-                        <Droppable droppableId="tasks-mobile" isDropDisabled={true}>
+                        <Droppable droppableId="tasks-mobile">
                           {(provided) => (
                             <div ref={provided.innerRef} {...provided.droppableProps}>
-                              {paginatedTasks.map((task) => (
+                              {paginatedTasks.map((task, index) => (
                                 <MobileTaskCard
                                   key={task.id}
                                   task={task}
+                                  index={index}
                                   onUpdate={handleTaskUpdate}
                                   onDelete={handleDeleteTask}
                                   onAdd={() => handleAddTask(task.id)}

@@ -4,25 +4,38 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Task } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
-import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import NumberStepper from './NumberStepper';
+import { Draggable, DraggableProvided } from '@hello-pangea/dnd';
 
 interface MobileTaskCardProps {
   task: Task;
+  index: number;
   onUpdate: (id: string, field: keyof Omit<Task, 'id'> | 'today', value: string | boolean) => void;
   onDelete: (id: string) => void;
   onAdd: (id: string) => void;
   onPriorityChange: (id: string, newPriority: number) => void;
   isSelected?: boolean;
   onToggleSelect?: (taskId: string) => void;
+  isDraggable?: boolean;
 }
 
-const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelete, onAdd, onPriorityChange, isSelected = false, onToggleSelect }) => {
+const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ 
+  task, 
+  index, 
+  onUpdate, 
+  onDelete, 
+  onAdd, 
+  onPriorityChange, 
+  isSelected = false, 
+  onToggleSelect,
+  isDraggable = true
+}) => {
   const [editedTask, setEditedTask] = useState(task);
   // Collapse state for the metadata section
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -31,10 +44,17 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
     setEditedTask(task);
   }, [task]);
 
-  return (
-    <Card className={cn("mb-1 rounded-md", task.status === 'done' && 'bg-muted')}>
+  const cardContent = (provided?: DraggableProvided) => (
+    <Card 
+      className={cn("mb-1 rounded-md", task.status === 'done' && 'bg-muted')}
+      ref={provided?.innerRef}
+      {...(provided?.draggableProps || {})}
+    >
       <CardContent className="p-2 space-y-2">
         <div className="flex items-start gap-1">
+          <div {...(provided?.dragHandleProps || {})} className="cursor-grab active:cursor-grabbing mt-1">
+            {isDraggable ? <GripVertical className="h-4 w-4 text-muted-foreground" /> : <div className="w-4" />}
+          </div>
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onToggleSelect?.(task.id)}
@@ -71,7 +91,11 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
             <NumberStepper
               title="Priority:"
               value={editedTask.priority}
-              onChange={(newVal) => setEditedTask(prev => ({ ...prev, priority: newVal }))}
+              onChange={(newVal) => {
+                setEditedTask(prev => ({ ...prev, priority: newVal }));
+                // Immediately update priority when buttons are clicked
+                onPriorityChange(task.id, newVal);
+              }}
               onBlur={() => {
                 if (editedTask.priority !== task.priority) {
                   onPriorityChange(task.id, editedTask.priority);
@@ -127,6 +151,16 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ task, onUpdate, onDelet
         </div>
       </CardContent>
     </Card>
+  );
+
+  if (!isDraggable) {
+    return cardContent();
+  }
+
+  return (
+    <Draggable key={task.id} draggableId={task.id} index={index}>
+      {(provided) => cardContent(provided)}
+    </Draggable>
   );
 };
 

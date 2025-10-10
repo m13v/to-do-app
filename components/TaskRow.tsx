@@ -114,7 +114,11 @@ const TaskRow: React.FC<TaskRowProps> = ({
       <TableCell>
         <NumberStepper
           value={editedTask.priority}
-          onChange={(newVal) => setEditedTask(prev => ({ ...prev, priority: newVal }))}
+          onChange={(newVal) => {
+            setEditedTask(prev => ({ ...prev, priority: newVal }));
+            // Immediately call handlePriorityChange when buttons are clicked or value changes
+            handlePriorityChange(task.id, newVal);
+          }}
           onBlur={() => {
             if (editedTask.priority !== task.priority) {
               handlePriorityChange(task.id, editedTask.priority);
