@@ -86,6 +86,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
               task.status === 'done' && 'line-through'
             )}
             rows={Math.max(1, Math.floor(editedTask.task.length / 35))}
+            data-task-id={task.id}
           />
           <Button
             onClick={() => setIsCollapsed(!isCollapsed)}

@@ -661,6 +661,14 @@ export default function Home() {
     const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, task: '', status: 'to_do', today: false };
     const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
+    
+    // Focus the new task field after render (works for both desktop and mobile)
+    setTimeout(() => {
+      const newTaskField = document.querySelector(`textarea[data-task-id="${newTask.id}"]`) as HTMLTextAreaElement;
+      if (newTaskField) {
+        newTaskField.focus();
+      }
+    }, 50); // Small delay to allow React to render the new element
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
 
   const handleDeleteTask = useCallback((id: string) => {

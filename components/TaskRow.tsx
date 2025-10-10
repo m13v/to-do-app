@@ -50,6 +50,20 @@ const TaskRow: React.FC<TaskRowProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, colIndex: number) => {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
     
+    // Enter key (without Shift) creates a new task when in the Task field (colIndex 2)
+    // Shift+Enter allows adding new lines in the textarea
+    if (e.key === 'Enter' && !e.shiftKey && colIndex === 2) {
+      e.preventDefault();
+      // Flush any pending debounced updates and save current changes
+      debouncedUpdate.flush();
+      if (editedTask.task !== task.task) {
+        handleTaskUpdate(task.id, 'task', editedTask.task);
+      }
+      // Create new task (same as clicking Plus icon)
+      handleAddTask(task.id);
+      return;
+    }
+    
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       focusCell(Math.max(0, index - 1), colIndex);
@@ -158,6 +172,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               onKeyDown={(e) => handleKeyDown(e, 2)}
           className="min-h-[20px] py-0 px-1 border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
+              data-task-id={task.id}
             />
           </TableCell>
       <TableCell className="text-center">
