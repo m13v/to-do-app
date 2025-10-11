@@ -75,6 +75,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [categoryComboOpen, setCategoryComboOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusComboOpen, setStatusComboOpen] = useState(false);
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
@@ -114,6 +116,15 @@ export default function Home() {
       console.log('Category filter loaded from localStorage:', storedFilter);
     }
   }, []);
+  
+  // Load status filter from localStorage after hydration to avoid hydration mismatch
+  useEffect(() => {
+    const storedStatusFilter = localStorage.getItem('statusFilter');
+    if (storedStatusFilter) {
+      setStatusFilter(storedStatusFilter);
+      console.log('Status filter loaded from localStorage:', storedStatusFilter);
+    }
+  }, []);
   // Pagination state - render only 200 tasks at a time for performance
   const [currentPage, setCurrentPage] = useState(1);
   const TASKS_PER_PAGE = 200;
@@ -136,8 +147,9 @@ export default function Home() {
     const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.task.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  }), [allTasks, searchQuery, categoryFilter]);
+    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    return matchesSearch && matchesCategory && matchesStatus;
+  }), [allTasks, searchQuery, categoryFilter, statusFilter]);
 
   const saveTasks = useCallback(async (tasksToSave: Task[], forceSync = false): Promise<boolean> => {
     setSaving(true);
@@ -332,6 +344,12 @@ export default function Home() {
     localStorage.setItem('categoryFilter', categoryFilter);
     console.log('Category filter saved to localStorage:', categoryFilter);
   }, [categoryFilter]);
+  
+  // Persist status filter to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('statusFilter', statusFilter);
+    console.log('Status filter saved to localStorage:', statusFilter);
+  }, [statusFilter]);
   
   // Effect to sync local tasks on sign-in
   // Only uploads local tasks if server has no tasks (new user)
@@ -690,8 +708,9 @@ export default function Home() {
     const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.task.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  }), [activeTasks, searchQuery, categoryFilter]);
+    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    return matchesSearch && matchesCategory && matchesStatus;
+  }), [activeTasks, searchQuery, categoryFilter, statusFilter]);
 
   const sortedActiveTasks = useMemo(() => {
     const sortableTasks = [...filteredActiveTasks];
@@ -718,7 +737,7 @@ export default function Home() {
   // Reset to page 1 when filter/search/sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, categoryFilter, sortField, sortDirection]);
+  }, [searchQuery, categoryFilter, statusFilter, sortField, sortDirection]);
 
   // Calculate pagination values
   const totalPages = Math.ceil(sortedActiveTasks.length / TASKS_PER_PAGE);
@@ -1011,6 +1030,95 @@ export default function Home() {
                                 {category}
                               </CommandItem>
                             ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <Popover open={statusComboOpen} onOpenChange={setStatusComboOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={statusComboOpen}
+                        className="w-full md:w-[200px] h-9 justify-between"
+                      >
+                        {statusFilter === 'all' 
+                          ? 'All Statuses' 
+                          : statusFilter === 'to_do' ? 'To Do'
+                          : statusFilter === 'in_progress' ? 'In Progress'
+                          : statusFilter === 'waiting' ? 'Waiting'
+                          : statusFilter === 'done' ? 'Done'
+                          : 'All Statuses'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search statuses..." />
+                        <CommandList>
+                          <CommandEmpty>No status found.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              value="all"
+                              onSelect={() => {
+                                setStatusFilter('all');
+                                setStatusComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={statusFilter === 'all' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              All Statuses
+                            </CommandItem>
+                            <CommandItem
+                              value="to_do"
+                              onSelect={() => {
+                                setStatusFilter('to_do');
+                                setStatusComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={statusFilter === 'to_do' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              To Do
+                            </CommandItem>
+                            <CommandItem
+                              value="in_progress"
+                              onSelect={() => {
+                                setStatusFilter('in_progress');
+                                setStatusComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={statusFilter === 'in_progress' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              In Progress
+                            </CommandItem>
+                            <CommandItem
+                              value="waiting"
+                              onSelect={() => {
+                                setStatusFilter('waiting');
+                                setStatusComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={statusFilter === 'waiting' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              Waiting
+                            </CommandItem>
+                            <CommandItem
+                              value="done"
+                              onSelect={() => {
+                                setStatusFilter('done');
+                                setStatusComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={statusFilter === 'done' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              Done
+                            </CommandItem>
                           </CommandGroup>
                         </CommandList>
                       </Command>
