@@ -11,30 +11,5 @@
  ⚠ Invalid next.config.ts options detected: 
  ⚠     Unrecognized key(s) in object: 'api'
  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
- ✓ Compiled middleware in 109ms
- ✓ Ready in 655ms
- ○ Compiling / ...
- ✓ Compiled / in 1113ms
- GET / 200 in 1333ms
- ✓ Compiled /favicon.ico in 141ms
- GET /favicon.ico?favicon.ff4d1693.ico 200 in 371ms
- ✓ Compiled /api/prompts in 219ms
- GET /api/prompts 401 in 269ms
- GET /api/prompts 401 in 17ms
- GET / 200 in 47ms
- GET /api/prompts 401 in 15ms
- GET /api/prompts 401 in 13ms
- ✓ Compiled in 58ms
- ✓ Compiled in 51ms
- GET / 200 in 204ms
- GET /api/prompts 401 in 21ms
- GET /api/prompts 401 in 14ms
- ✓ Compiled in 52ms
- GET / 200 in 199ms
- GET /api/prompts 401 in 16ms
- GET /api/prompts 401 in 15ms
- GET / 200 in 176ms
- GET /favicon.ico?favicon.ff4d1693.ico 200 in 218ms
- GET /api/prompts 401 in 15ms
- GET /api/prompts 401 in 14ms
-[?25h
+ ✓ Compiled middleware in 128ms
+ ✓ Ready in 685ms

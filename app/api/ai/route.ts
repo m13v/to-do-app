@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       properties: {
         markdown_table: {
           type: SchemaType.STRING,
-          description: "The complete, updated markdown table. It must start with `| Category |` and include all rows."
+          description: "The complete, updated markdown table. It must start with `| P | Category |` and include all columns: P, Category, Subcategory, Task, Status, Today, Created. Include all rows."
         }
       },
       required: ['markdown_table']

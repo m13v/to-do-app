@@ -128,6 +128,15 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
             />
           </div>
           <div className="flex items-center justify-between">
+            <strong className="text-foreground">Subcategory:</strong>
+            <Input
+                value={editedTask.subcategory}
+                onChange={(e) => setEditedTask(prev => ({...prev, subcategory: e.target.value}))}
+                onBlur={() => onUpdate(task.id, 'subcategory', editedTask.subcategory)}
+                className="h-6 text-xs w-24 text-right border-0"
+            />
+          </div>
+          <div className="flex items-center justify-between">
             <strong className="text-foreground">Status:</strong>
             <Select value={editedTask.status} onValueChange={(value) => onUpdate(task.id, 'status', value)}>
               <SelectTrigger className="h-6 text-xs w-24 border-0 justify-end">

@@ -35,16 +35,16 @@ import CategoriesManager from '@/components/CategoriesManager';
 type SortField = 'priority' | 'category' | 'task';
 type SortDirection = 'asc' | 'desc';
 
-const defaultTasksMarkdown = `| P | Category | Task | Status | Done |
-|---|---|---|---|---|
-| 1 | Welcome | Welcome to your new task manager! | to_do | |
-| 2 | Welcome | Click on any task text to edit it. | to_do | |
-| 3 | Welcome | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | |
-| 4 | Welcome | Drag and drop tasks to reorder them. | to_do | |
-| 5 | Welcome | Use the search bar to filter your tasks. | to_do | |
-| 6 | Welcome | Click on the column headers to sort your list. | to_do | |
-| 7 | Welcome | Use the AI Assistant to manage your tasks with natural language. | to_do | |
-| 8 | Welcome | Delete these welcome tasks when you're ready to start. | to_do | |
+const defaultTasksMarkdown = `| P | Category | Subcategory | Task | Status | Today | Created |
+|---|---|---|---|---|---|----------|
+| 1 | Welcome | | Welcome to your new task manager! | to_do | | ${new Date().toISOString().split('T')[0]} |
+| 2 | Welcome | | Click on any task text to edit it. | to_do | | ${new Date().toISOString().split('T')[0]} |
+| 3 | Welcome | | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | | ${new Date().toISOString().split('T')[0]} |
+| 4 | Welcome | | Drag and drop tasks to reorder them. | to_do | | ${new Date().toISOString().split('T')[0]} |
+| 5 | Welcome | | Use the search bar to filter your tasks. | to_do | | ${new Date().toISOString().split('T')[0]} |
+| 6 | Welcome | | Click on the column headers to sort your list. | to_do | | ${new Date().toISOString().split('T')[0]} |
+| 7 | Welcome | | Use the AI Assistant to manage your tasks with natural language. | to_do | | ${new Date().toISOString().split('T')[0]} |
+| 8 | Welcome | | Delete these welcome tasks when you're ready to start. | to_do | | ${new Date().toISOString().split('T')[0]} |
 `;
 
 const systemPrompt = `You are an AI assistant helping to manage a todo list. The user will provide a markdown table and a prompt.
@@ -52,9 +52,12 @@ Your task is to return a new, updated markdown table based on the user's prompt.
 
 **RULES:**
 1.  **ONLY** return the markdown table. Do not include any other text, titles, headers, or explanations.
-2.  The table structure is fixed. The columns are: | Category | Task | Status | Today |
+2.  The table structure is fixed. The columns are: | P | Category | Subcategory | Task | Status | Today | Created |
 3.  Do **NOT** add, remove, or rename any columns.
-4.  Preserve the pipe \`|\` separators and the markdown table format exactly.
+4.  The "Created" column contains the creation date (YYYY-MM-DD format). When modifying existing tasks, preserve their Created date. For new tasks you create, use today's date: ${new Date().toISOString().split('T')[0]}
+5.  The "P" column is the priority number. You can modify this to reorder tasks.
+6.  The "Today" column should be "yes" for tasks to focus on today, or empty otherwise.
+7.  Preserve the pipe \`|\` separators and the markdown table format exactly.
 Your output will be parsed by a script, so any deviation from this format will break the application.
 `;
 
@@ -125,6 +128,20 @@ export default function Home() {
       console.log('Status filter loaded from localStorage:', storedStatusFilter);
     }
   }, []);
+  
+  // Load column widths from localStorage after hydration
+  useEffect(() => {
+    const storedWidths = localStorage.getItem('columnWidths');
+    if (storedWidths) {
+      try {
+        const parsed = JSON.parse(storedWidths);
+        setColumnWidths(parsed);
+        console.log('Column widths loaded from localStorage:', parsed);
+      } catch (error) {
+        console.error('Failed to parse stored column widths:', error);
+      }
+    }
+  }, []);
   // Pagination state - render only 200 tasks at a time for performance
   const [currentPage, setCurrentPage] = useState(1);
   const TASKS_PER_PAGE = 200;
@@ -134,6 +151,27 @@ export default function Home() {
   const [conflictData, setConflictData] = useState<{ serverContent: string; serverTimestamp: string } | null>(null);
   // Tab state for switching between Tasks and Categories views
   const [activeTab, setActiveTab] = useState<string>('tasks');
+  // Column width state for resizable columns - synced across both Today's and main tables
+  const [columnWidths, setColumnWidths] = useState({
+    checkbox: 32,
+    drag: 32,
+    priority: 80,
+    category: 128,
+    subcategory: 128,
+    status: 128,
+    task: 300,
+    today: 64,
+    actions: 80
+  });
+  const [isResizing, setIsResizing] = useState<string | null>(null);
+  const resizeStartX = useRef<number>(0);
+  const resizeStartWidth = useRef<number>(0);
+
+  // Calculate minimum table width by summing all column widths
+  // This ensures Today's table and main table have identical minimum widths and aligned columns
+  const minTableWidth = useMemo(() => {
+    return Object.values(columnWidths).reduce((sum, width) => sum + width, 0);
+  }, [columnWidths]);
 
   const allTasks = useMemo(() => [...activeTasks, ...doneTasks], [activeTasks, doneTasks]);
   
@@ -350,6 +388,12 @@ export default function Home() {
     localStorage.setItem('statusFilter', statusFilter);
     console.log('Status filter saved to localStorage:', statusFilter);
   }, [statusFilter]);
+  
+  // Persist column widths to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('columnWidths', JSON.stringify(columnWidths));
+    console.log('Column widths saved to localStorage:', columnWidths);
+  }, [columnWidths]);
   
   // Effect to sync local tasks on sign-in
   // Only uploads local tasks if server has no tasks (new user)
@@ -675,8 +719,9 @@ export default function Home() {
     const newTasks = [...activeTasks];
     const afterIndex = newTasks.findIndex(t => t.id === afterId);
     const category = newTasks[afterIndex]?.category || 'NEW';
+    const subcategory = newTasks[afterIndex]?.subcategory || '';
     const newPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0) + 1;
-    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, task: '', status: 'to_do', today: false };
+    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, subcategory, task: '', status: 'to_do', today: false, created_at: new Date().toISOString() };
     const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
     
@@ -805,6 +850,52 @@ export default function Home() {
       cell.focus();
     }
   };
+
+  // Column resize handlers
+  const handleResizeStart = useCallback((columnKey: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(columnKey);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = columnWidths[columnKey as keyof typeof columnWidths];
+    console.log(`[Column Resize] Starting resize for ${columnKey} at width ${resizeStartWidth.current}px`);
+  }, [columnWidths]);
+
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    
+    const delta = e.clientX - resizeStartX.current;
+    const newWidth = Math.max(40, resizeStartWidth.current + delta); // Minimum width of 40px
+    
+    setColumnWidths(prev => ({
+      ...prev,
+      [isResizing]: newWidth
+    }));
+  }, [isResizing]);
+
+  const handleResizeEnd = useCallback(() => {
+    if (isResizing) {
+      console.log(`[Column Resize] Finished resizing ${isResizing} to ${columnWidths[isResizing as keyof typeof columnWidths]}px`);
+      setIsResizing(null);
+    }
+  }, [isResizing, columnWidths]);
+
+  // Add/remove mouse event listeners for column resizing
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+      // Prevent text selection while resizing
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+      
+      return () => {
+        document.removeEventListener('mousemove', handleResizeMove);
+        document.removeEventListener('mouseup', handleResizeEnd);
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+      };
+    }
+  }, [isResizing, handleResizeMove, handleResizeEnd]);
 
   // Handle selecting/deselecting individual tasks
   const handleToggleTaskSelection = useCallback((taskId: string) => {
@@ -1235,18 +1326,27 @@ export default function Home() {
                       <DragDropContext onDragEnd={() => {}}>
                         {isDesktop ? (
                           <div className="overflow-x-auto">
-                            <Table className="w-full">
+                            <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="px-0.5 w-8">
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.checkbox}px`, minWidth: `${columnWidths.checkbox}px` }}>
                                     <Checkbox
                                       checked={todayTasks.length > 0 && todayTasks.every(t => selectedTaskIds.has(t.id))}
                                       onCheckedChange={() => handleToggleSelectAll(todayTasks)}
                                       aria-label="Select all today tasks"
                                     />
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('checkbox', e)}
+                                    />
                                   </TableHead>
-                                  <TableHead className="px-0.5"></TableHead>
-                                  <TableHead className="px-0.5">
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('drag', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.priority}px`, minWidth: `${columnWidths.priority}px` }} onClick={() => handleSort('priority')}>
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -1255,20 +1355,59 @@ export default function Home() {
                                         <TooltipContent>Overall Priority</TooltipContent>
                                       </Tooltip>
                                     </TooltipProvider>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('priority', e)}
+                                    />
                                   </TableHead>
-                                  <TableHead className="px-0.5">
+                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.category}px`, minWidth: `${columnWidths.category}px` }} onClick={() => handleSort('category')}>
                                     <div className="flex items-center gap-1">
-                                      Category
+                                      Category {getSortIcon('category')}
                                     </div>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('category', e)}
+                                    />
                                   </TableHead>
-                                  <TableHead className="px-0.5">Status</TableHead>
-                                  <TableHead className="px-0.5">
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.subcategory}px`, minWidth: `${columnWidths.subcategory}px` }}>
                                     <div className="flex items-center gap-1">
-                                      Task
+                                      Subcategory
                                     </div>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('subcategory', e)}
+                                    />
                                   </TableHead>
-                                  <TableHead className="px-0.5">Today</TableHead>
-                                  <TableHead className="px-0.5 text-right" title="Actions">Actions</TableHead>
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px` }}>
+                                    Status
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('status', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.task}px`, minWidth: `${columnWidths.task}px` }} onClick={() => handleSort('task')}>
+                                    <div className="flex items-center gap-1">
+                                      Task {getSortIcon('task')}
+                                    </div>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('task', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.today}px`, minWidth: `${columnWidths.today}px` }}>
+                                    Today
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('today', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">
+                                    Actions
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('actions', e)}
+                                    />
+                                  </TableHead>
                                 </TableRow>
                               </TableHeader>
                               <Droppable droppableId="today-tasks">
@@ -1286,6 +1425,7 @@ export default function Home() {
                                         focusCell={focusCell}
                                         isSelected={selectedTaskIds.has(task.id)}
                                         onToggleSelect={handleToggleTaskSelection}
+                                        columnWidths={columnWidths}
                                       />
                                     ))}
                                     {provided.placeholder}
@@ -1326,18 +1466,27 @@ export default function Home() {
                     <DragDropContext onDragEnd={handleDragEnd}>
                       {isDesktop ? (
                         <div className="overflow-x-auto">
-                          <Table className="w-full">
+                          <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="px-0.5 w-8">
+                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.checkbox}px`, minWidth: `${columnWidths.checkbox}px` }}>
                                   <Checkbox
                                     checked={paginatedTasks.length > 0 && paginatedTasks.every(t => selectedTaskIds.has(t.id))}
                                     onCheckedChange={() => handleToggleSelectAll(paginatedTasks)}
                                     aria-label="Select all tasks"
                                   />
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('checkbox', e)}
+                                  />
                                 </TableHead>
-                                <TableHead className="px-0.5"></TableHead>
-                                <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('drag', e)}
+                                  />
+                                </TableHead>
+                                <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.priority}px`, minWidth: `${columnWidths.priority}px` }} onClick={() => handleSort('priority')}>
                                    <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -1346,20 +1495,59 @@ export default function Home() {
                                       <TooltipContent>Overall Priority</TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('priority', e)}
+                                  />
                                 </TableHead>
-                                <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.category}px`, minWidth: `${columnWidths.category}px` }} onClick={() => handleSort('category')}>
                                   <div className="flex items-center gap-1">
                                     Category {getSortIcon('category')}
                                   </div>
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('category', e)}
+                                  />
                                 </TableHead>
-                                <TableHead className="px-0.5">Status</TableHead>
-                                <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.subcategory}px`, minWidth: `${columnWidths.subcategory}px` }}>
+                                  <div className="flex items-center gap-1">
+                                    Subcategory
+                                  </div>
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('subcategory', e)}
+                                  />
+                                </TableHead>
+                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px` }}>
+                                  Status
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('status', e)}
+                                  />
+                                </TableHead>
+                                <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.task}px`, minWidth: `${columnWidths.task}px` }} onClick={() => handleSort('task')}>
                                   <div className="flex items-center gap-1">
                                     Task {getSortIcon('task')}
                                   </div>
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('task', e)}
+                                  />
                                 </TableHead>
-                                <TableHead className="px-0.5">Today</TableHead>
-                                <TableHead className="px-0.5 text-right" title="Actions">Actions</TableHead>
+                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.today}px`, minWidth: `${columnWidths.today}px` }}>
+                                  Today
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('today', e)}
+                                  />
+                                </TableHead>
+                                <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">
+                                  Actions
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('actions', e)}
+                                  />
+                                </TableHead>
                               </TableRow>
                             </TableHeader>
                             <Droppable droppableId="tasks">
@@ -1377,6 +1565,7 @@ export default function Home() {
                                       focusCell={focusCell}
                                       isSelected={selectedTaskIds.has(task.id)}
                                       onToggleSelect={handleToggleTaskSelection}
+                                      columnWidths={columnWidths}
                                     />
                                   ))}
                                   {provided.placeholder}
@@ -1423,18 +1612,27 @@ export default function Home() {
                       {isArchiveOpen && (
                         <CardContent className="py-2">
                           <div className="overflow-x-auto">
-                            <Table className="w-full">
+                            <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="px-0.5 w-8">
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.checkbox}px`, minWidth: `${columnWidths.checkbox}px` }}>
                                     <Checkbox
                                       checked={doneTasks.length > 0 && doneTasks.every(t => selectedTaskIds.has(t.id))}
                                       onCheckedChange={() => handleToggleSelectAll(doneTasks)}
                                       aria-label="Select all archived tasks"
                                     />
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('checkbox', e)}
+                                    />
                                   </TableHead>
-                                  <TableHead className="px-0.5"></TableHead>
-                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('priority')}>
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('drag', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.priority}px`, minWidth: `${columnWidths.priority}px` }} onClick={() => handleSort('priority')}>
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger className="w-full h-full flex items-center justify-center">
@@ -1443,20 +1641,59 @@ export default function Home() {
                                         <TooltipContent>Overall Priority</TooltipContent>
                                       </Tooltip>
                                     </TooltipProvider>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('priority', e)}
+                                    />
                                   </TableHead>
-                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('category')}>
+                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.category}px`, minWidth: `${columnWidths.category}px` }} onClick={() => handleSort('category')}>
                                     <div className="flex items-center gap-1">
                                       Category {getSortIcon('category')}
                                     </div>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('category', e)}
+                                    />
                                   </TableHead>
-                                  <TableHead className="px-0.5">Status</TableHead>
-                                  <TableHead className="px-0.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('task')}>
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.subcategory}px`, minWidth: `${columnWidths.subcategory}px` }}>
+                                    <div className="flex items-center gap-1">
+                                      Subcategory
+                                    </div>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('subcategory', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px` }}>
+                                    Status
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('status', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.task}px`, minWidth: `${columnWidths.task}px` }} onClick={() => handleSort('task')}>
                                     <div className="flex items-center gap-1">
                                       Task {getSortIcon('task')}
                                     </div>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('task', e)}
+                                    />
                                   </TableHead>
-                                  <TableHead className="px-0.5">Today</TableHead>
-                                  <TableHead className="px-0.5 text-right" title="Actions">Actions</TableHead>
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.today}px`, minWidth: `${columnWidths.today}px` }}>
+                                    Today
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('today', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">
+                                    Actions
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('actions', e)}
+                                    />
+                                  </TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -1472,6 +1709,7 @@ export default function Home() {
                                     focusCell={() => {}}
                                     isSelected={selectedTaskIds.has(task.id)}
                                     onToggleSelect={handleToggleTaskSelection}
+                                    columnWidths={columnWidths}
                                   />
                                 ))}
                               </TableBody>

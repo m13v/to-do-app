@@ -24,7 +24,7 @@ const defaultPrompts: QuickPrompt[] = [
   { id: '1', title: 'Consolidate Categories', prompt: "Are any of the categories seem repetative, can we cut the number of categories by 3 pieces?" },
   { id: '2', title: 'Improve Categories Names', prompt: "Are the category names good? Each cateogry should be 2 words or less, can you improve the names?" },
   { id: '3', title: 'Find categories Misaligned', prompt: "Are any of crucial categories are totally misaligned with tasks? Create then, but not more than 1-3 categories, 2 words or less for each" },
-  { id: '6', title: 'Plan My Day', prompt: "Review my entire task list and my recent changes. Based on this, please select the 5 most important tasks for me to focus on today. Mark these tasks by setting their 'Today' column to 'yes'. Do not select more than 5 tasks. Do not modify anything else." },
+  { id: '6', title: "Today's Tasks", prompt: "Select today's most critical 10 tasks total from different categories. Include a mix of recently added tasks and a couple of older tasks. Mark these tasks by setting their 'Today' column to 'yes'. Prioritize tasks that are most important and urgent. Do not select more than 10 tasks. Do not modify anything else." },
 ];
 
 interface QuickPromptsProps {

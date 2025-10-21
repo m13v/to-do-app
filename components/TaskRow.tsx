@@ -29,6 +29,17 @@ interface TaskRowProps {
   focusCell: (rowIndex: number, colIndex: number) => void;
   isSelected?: boolean;
   onToggleSelect?: (taskId: string) => void;
+  columnWidths?: {
+    checkbox: number;
+    drag: number;
+    priority: number;
+    category: number;
+    subcategory: number;
+    status: number;
+    task: number;
+    today: number;
+    actions: number;
+  };
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({
@@ -42,17 +53,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
   focusCell,
   isSelected = false,
   onToggleSelect,
+  columnWidths,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
 
-  const numCols = 4; // Category, Status, Task, Today
+  const numCols = 5; // Category, Subcategory, Status, Task, Today
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, colIndex: number) => {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
     
-    // Enter key (without Shift) creates a new task when in the Task field (colIndex 2)
+    // Enter key (without Shift) creates a new task when in the Task field (colIndex 3, updated from 2 due to subcategory)
     // Shift+Enter allows adding new lines in the textarea
-    if (e.key === 'Enter' && !e.shiftKey && colIndex === 2) {
+    if (e.key === 'Enter' && !e.shiftKey && colIndex === 3) {
       e.preventDefault();
       // Flush any pending debounced updates and save current changes
       debouncedUpdate.flush();
@@ -115,17 +127,17 @@ const TaskRow: React.FC<TaskRowProps> = ({
             task.status === 'done' && "text-muted-foreground line-through"
           )}
         >
-      <TableCell className="w-8">
+      <TableCell style={columnWidths ? { width: `${columnWidths.checkbox}px` } : undefined}>
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onToggleSelect?.(task.id)}
           aria-label={`Select task ${task.task}`}
         />
       </TableCell>
-      <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab">
+      <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab" style={columnWidths ? { width: `${columnWidths.drag}px` } : undefined}>
         {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
           </TableCell>
-      <TableCell>
+      <TableCell style={columnWidths ? { width: `${columnWidths.priority}px` } : undefined}>
         <NumberStepper
           value={editedTask.priority}
           onChange={(newVal) => {
@@ -140,7 +152,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
           }}
         />
           </TableCell>
-      <TableCell className="font-medium">
+      <TableCell className="font-medium" style={columnWidths ? { width: `${columnWidths.category}px` } : undefined}>
             <Input
               id={`cell-${index}-0`}
               value={editedTask.category}
@@ -150,9 +162,19 @@ const TaskRow: React.FC<TaskRowProps> = ({
           className="h-5 py-0 px-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </TableCell>
-      <TableCell>
+      <TableCell className="font-medium" style={columnWidths ? { width: `${columnWidths.subcategory}px` } : undefined}>
+            <Input
+              id={`cell-${index}-1`}
+              value={editedTask.subcategory}
+              onChange={(e) => handleChange('subcategory', e.target.value)}
+              onBlur={() => handleBlur('subcategory')}
+              onKeyDown={(e) => handleKeyDown(e, 1)}
+          className="h-5 py-0 px-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+          </TableCell>
+      <TableCell style={columnWidths ? { width: `${columnWidths.status}px` } : undefined}>
             <Select value={editedTask.status} onValueChange={(value) => handleChange('status', value)}>
-          <SelectTrigger id={`cell-${index}-1`} onFocus={() => focusCell(index, 1)} className="h-5 py-0 px-2 border-0 focus:ring-0">
+          <SelectTrigger id={`cell-${index}-2`} onFocus={() => focusCell(index, 2)} className="h-5 py-0 px-2 border-0 focus:ring-0">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -163,21 +185,21 @@ const TaskRow: React.FC<TaskRowProps> = ({
               </SelectContent>
             </Select>
           </TableCell>
-      <TableCell>
+      <TableCell style={columnWidths ? { width: `${columnWidths.task}px` } : undefined}>
             <Textarea
-              id={`cell-${index}-2`}
+              id={`cell-${index}-3`}
               value={editedTask.task}
               onChange={(e) => handleChange('task', e.target.value)}
               onBlur={() => handleBlur('task')}
-              onKeyDown={(e) => handleKeyDown(e, 2)}
+              onKeyDown={(e) => handleKeyDown(e, 3)}
           className="min-h-[20px] py-0 px-1 border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
               rows={1}
               data-task-id={task.id}
             />
           </TableCell>
-      <TableCell className="text-center">
+      <TableCell className="text-center" style={columnWidths ? { width: `${columnWidths.today}px` } : undefined}>
             <Checkbox
-              id={`cell-${index}-3`}
+              id={`cell-${index}-4`}
               checked={!!editedTask.today}
               onCheckedChange={checked => {
                 if (process.env.NODE_ENV === 'development') {
@@ -185,11 +207,11 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 }
                 handleChange('today', !!checked);
               }}
-              onFocus={() => focusCell(index, 3)}
+              onFocus={() => focusCell(index, 4)}
               aria-label="Mark as today"
             />
           </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-right" style={columnWidths ? { width: `${columnWidths.actions}px` } : undefined}>
         <div className="flex items-center justify-end gap-0">
               <Button
                 onClick={() => handleAddTask(task.id)}
