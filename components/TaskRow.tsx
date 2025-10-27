@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { GripVertical, Plus, X } from 'lucide-react';
+import { GripVertical, Plus, X, WrapText } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
   Select,
@@ -56,6 +56,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
   columnWidths,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
+  // State to track if text should be wrapped or not (local UI state, not persisted)
+  const [isTextWrapped, setIsTextWrapped] = useState(true);
 
   const numCols = 5; // Category, Subcategory, Status, Task, Today
 
@@ -192,7 +194,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               onChange={(e) => handleChange('task', e.target.value)}
               onBlur={() => handleBlur('task')}
               onKeyDown={(e) => handleKeyDown(e, 3)}
-          className="min-h-[20px] py-0 px-1 border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          className={cn(
+            "min-h-[20px] py-0 px-1 border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0",
+            !isTextWrapped && "whitespace-nowrap overflow-hidden text-ellipsis"
+          )}
               rows={1}
               data-task-id={task.id}
             />
@@ -213,6 +218,15 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
       <TableCell className="text-right" style={columnWidths ? { width: `${columnWidths.actions}px` } : undefined}>
         <div className="flex items-center justify-end gap-0">
+              <Button
+                onClick={() => setIsTextWrapped(!isTextWrapped)}
+                size="sm"
+                variant="ghost"
+                className="h-5 w-5 p-0"
+                title={isTextWrapped ? "Unwrap text (fit to one line)" : "Wrap text (show all lines)"}
+              >
+                <WrapText className={cn("h-3 w-3", !isTextWrapped && "text-blue-600")} />
+              </Button>
               <Button
                 onClick={() => handleAddTask(task.id)}
                 size="sm"

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Task } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
-import { Plus, X, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronUp, GripVertical, WrapText } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,6 +39,8 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
   const [editedTask, setEditedTask] = useState(task);
   // Collapse state for the metadata section
   const [isCollapsed, setIsCollapsed] = useState(false);
+  // State to track if text should be wrapped or not (local UI state, not persisted)
+  const [isTextWrapped, setIsTextWrapped] = useState(true);
 
   useEffect(() => {
     setEditedTask(task);
@@ -83,7 +85,8 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
             }}
             className={cn(
               "flex-1 text-sm font-semibold p-1 resize-none border rounded-md shadow-none focus-visible:ring-1",
-              task.status === 'done' && 'line-through'
+              task.status === 'done' && 'line-through',
+              !isTextWrapped && "whitespace-nowrap overflow-hidden text-ellipsis"
             )}
             rows={Math.max(1, Math.floor(editedTask.task.length / 35))}
             data-task-id={task.id}
@@ -161,6 +164,15 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
             />
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setIsTextWrapped(!isTextWrapped)} 
+              size="sm" 
+              variant="ghost" 
+              className="h-6 px-2"
+              title={isTextWrapped ? "Unwrap text (fit to one line)" : "Wrap text (show all lines)"}
+            >
+              <WrapText className={cn("h-4 w-4", !isTextWrapped && "text-blue-600")} />
+            </Button>
             <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 px-2">
               <Plus className="h-4 w-4 mr-1" />
               Add
