@@ -28,7 +28,8 @@ export async function GET() {
       .order('updated_at', { ascending: false })
       .limit(1)
       .single();
-    if (error) {
+    // PGRST116 means no rows found (new user) - this is OK, return empty
+    if (error && error.code !== 'PGRST116') {
       console.error('[GET /api/tasks] Supabase error:', JSON.stringify(error));
       return NextResponse.json({ error: 'Failed to fetch tasks', details: error.message }, { status: 500 });
     }
