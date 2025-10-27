@@ -213,7 +213,7 @@ export default function Home() {
           return false; // Return false to indicate sync failure
         }
         // Track the server content after successful save
-        const responseData = await response.json();
+        await response.json(); // Consume response
         console.log('[Save Tasks] Successfully synced with server');
         console.log('[Conflict Detection] Updated local content after save');
         setLastKnownServerContent(markdown);
