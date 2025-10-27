@@ -11,10 +11,18 @@ export interface Task {
 
 export function parseMarkdownTable(markdown: string): Task[] {
   const lines = markdown.trim().split('\n');
-  if (lines.length < 2) return [];
+  console.log('[parseMarkdownTable] Total lines:', lines.length);
+  if (lines.length < 2) {
+    console.log('[parseMarkdownTable] Not enough lines, returning empty');
+    return [];
+  }
 
   const headerLine = lines.find(line => line.includes('| Category |'));
-  if (!headerLine) return [];
+  console.log('[parseMarkdownTable] Header line found:', !!headerLine);
+  if (!headerLine) {
+    console.log('[parseMarkdownTable] No header line found, returning empty');
+    return [];
+  }
   
   const headers = headerLine.split('|').map(h => h.trim().toLowerCase()).filter(h => h);
   const priorityIndex = headers.indexOf('p');
@@ -26,8 +34,9 @@ export function parseMarkdownTable(markdown: string): Task[] {
   const createdIndex = headers.indexOf('created');
 
   const taskLines = lines.slice(lines.indexOf(headerLine) + 2);
+  console.log('[parseMarkdownTable] Task lines to parse:', taskLines.length);
 
-  return taskLines.map((line, index) => {
+  const parsedTasks = taskLines.map((line, index) => {
     if (!line.startsWith('|')) return null;
     const parts = line.split('|').map(p => p.trim());
     
@@ -39,9 +48,16 @@ export function parseMarkdownTable(markdown: string): Task[] {
     const parsedPriority = priorityValue !== '' ? parseInt(priorityValue, 10) : NaN;
     const priority = !isNaN(parsedPriority) ? parsedPriority : (index + 1);
     
-    // Parse created_at: use existing value if present, otherwise use current time for backward compatibility
+    // Parse created_at: use existing value if present and valid, otherwise use current time
     const createdValue = getValue(createdIndex);
-    const created_at = createdValue !== '' ? createdValue : new Date().toISOString();
+    let created_at = new Date().toISOString(); // default to current time
+    if (createdValue !== '') {
+      const parsedDate = new Date(createdValue);
+      // Check if date is valid (not NaN)
+      if (!isNaN(parsedDate.getTime())) {
+        created_at = parsedDate.toISOString();
+      }
+    }
     
     return {
       id: `${Date.now()}-${Math.random()}-${index}`,
@@ -55,6 +71,9 @@ export function parseMarkdownTable(markdown: string): Task[] {
       created_at,
     };
   }).filter((task): task is Task => task !== null);
+  
+  console.log('[parseMarkdownTable] Parsed tasks count:', parsedTasks.length);
+  return parsedTasks;
 }
 
 export function tasksToMarkdown(tasks: Task[]): string {
@@ -67,8 +86,14 @@ export function tasksToMarkdown(tasks: Task[]): string {
   for (const task of sortedTasks) {
     // Convert newlines to <br> tags for multi-line task support in markdown tables
     const taskWithBreaks = task.task.replace(/\n/g, '<br>');
-    // Format created_at to a readable date (YYYY-MM-DD)
-    const createdDate = task.created_at ? new Date(task.created_at).toISOString().split('T')[0] : '';
+    // Format created_at to a readable date (YYYY-MM-DD), validate date first
+    let createdDate = '';
+    if (task.created_at) {
+      const parsedDate = new Date(task.created_at);
+      if (!isNaN(parsedDate.getTime())) {
+        createdDate = parsedDate.toISOString().split('T')[0];
+      }
+    }
     markdown += `| ${task.priority} | ${task.category} | ${task.subcategory} | ${taskWithBreaks} | ${task.status} | ${task.today ? 'yes' : ''} | ${createdDate} |\n`;
   }
   

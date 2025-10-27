@@ -827,17 +827,29 @@ export default function Home() {
   const todayTasks = useMemo(() => activeTasks.filter(t => t.today), [activeTasks]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('[File Import] handleFileChange called');
     const file = event.target.files?.[0];
-    if (!file) return;
+    console.log('[File Import] Selected file:', file?.name, 'Size:', file?.size);
+    
+    if (!file) {
+      console.log('[File Import] No file selected, returning');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
+      console.log('[File Import] File loaded, content length:', content?.length);
       if (content) {
         const importedTasks = parseMarkdownTable(content);
+        console.log('[File Import] Parsed tasks:', importedTasks.length);
         updateAndSaveTasks(importedTasks);
         alert(`${importedTasks.length} tasks imported successfully.`);
       }
+    };
+    reader.onerror = (error) => {
+      console.error('[File Import] Error reading file:', error);
+      alert('Error reading file. Please try again.');
     };
     reader.readAsText(file);
     // Reset file input to allow re-uploading the same file
@@ -1265,7 +1277,11 @@ export default function Home() {
                       className="hidden"
                     />
                     <Button
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => {
+                        console.log('[File Import] Import button clicked');
+                        console.log('[File Import] fileInputRef.current:', !!fileInputRef.current);
+                        fileInputRef.current?.click();
+                      }}
                       variant="outline"
                       size="sm"
                     >
