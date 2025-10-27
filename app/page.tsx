@@ -194,34 +194,36 @@ export default function Home() {
     setSaving(true);
     try {
       const markdown = tasksToMarkdown(tasksToSave);
+      const sizeInKB = (new Blob([markdown]).size / 1024).toFixed(2);
+      console.log(`[Save Tasks] Saving ${tasksToSave.length} tasks (${sizeInKB} KB)`);
+      
       localStorage.setItem('markdownContent', markdown);
 
       if (isSignedIn || forceSync) {
+        console.log('[Save Tasks] Attempting to sync with server...');
         const response = await fetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content: markdown }),
         });
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[Save Tasks] Server error:', response.status, errorText);
           setSyncError(true);
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Failed to save tasks to server, but tasks are saved in localStorage');
-          }
-          return true; // Return true since we saved to localStorage
+          return false; // Return false to indicate sync failure
         }
         // Track the server content after successful save
-        await response.json(); // Consume response
+        const responseData = await response.json();
+        console.log('[Save Tasks] Successfully synced with server');
         console.log('[Conflict Detection] Updated local content after save');
         setLastKnownServerContent(markdown);
         setSyncError(false);
       }
       return true;
     } catch (error) {
+      console.error('[Save Tasks] Error saving tasks:', error);
       if (isSignedIn) setSyncError(true);
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error saving tasks:', error);
-      }
-      return true; 
+      return false; 
     } finally {
       setSaving(false);
     }
