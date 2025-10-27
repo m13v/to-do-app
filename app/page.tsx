@@ -83,6 +83,7 @@ export default function Home() {
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [countdown, setCountdown] = useState(180);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportableMarkdown, setExportableMarkdown] = useState('');
@@ -249,8 +250,24 @@ export default function Home() {
   }, [allTasks, history, historyIndex, saveTasks]);
 
   const retrySync = useCallback(async () => {
-    setSyncError(false);
-    await saveTasks(allTasks);
+    console.log('[Retry Sync] Starting retry attempt...');
+    setRetrying(true);
+    try {
+      const success = await saveTasks(allTasks, true);
+      if (success) {
+        setSyncError(false);
+        toast.success("Successfully synced with server!");
+        console.log('[Retry Sync] Sync successful');
+      } else {
+        console.error('[Retry Sync] Sync failed');
+        toast.error("Sync failed. Please try again.");
+      }
+    } catch (error) {
+      console.error('[Retry Sync] Error during retry:', error);
+      toast.error("Sync failed. Please try again.");
+    } finally {
+      setRetrying(false);
+    }
   }, [allTasks, saveTasks]);
 
   // Handle conflict resolution - reload server data
@@ -482,9 +499,13 @@ export default function Home() {
             if (serverChanged && localChanged) {
               console.log('[Conflict Detection] ⚠️ CONFLICT DETECTED - Both server and local have changes!');
               setConflictDetected(true);
+              // Ensure timestamp is valid - if not, use current time
+              const validTimestamp = data.updated_at && typeof data.updated_at === 'string' && !isNaN(Date.parse(data.updated_at))
+                ? data.updated_at
+                : new Date().toISOString();
               setConflictData({
                 serverContent: data.content,
-                serverTimestamp: data.updated_at || new Date().toISOString()
+                serverTimestamp: validTimestamp
               });
             } else if (serverChanged && !localChanged) {
               // Server changed but we haven't - safe to auto-update
@@ -986,9 +1007,24 @@ export default function Home() {
             ) : (
               <>
                 {syncError && (
-                  <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-2 text-center">
-                    Could not sync with server. Your tasks are safe locally.
-                    <button onClick={retrySync} className="ml-2 underline text-red-700">Retry</button>
+                  <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-2 text-center flex items-center justify-center gap-2">
+                    <span>Could not sync with server. Your tasks are safe locally.</span>
+                    <Button 
+                      onClick={retrySync} 
+                      variant="ghost" 
+                      size="sm" 
+                      disabled={retrying}
+                      className="underline text-red-700 hover:text-red-800 h-auto p-1"
+                    >
+                      {retrying ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          Retrying...
+                        </>
+                      ) : (
+                        'Retry'
+                      )}
+                    </Button>
                   </div>
                 )}
 
