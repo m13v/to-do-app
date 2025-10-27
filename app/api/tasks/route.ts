@@ -17,6 +17,7 @@ console.log('Supabase Config:', {
 export async function GET() {
   try {
     const { userId } = await auth();
+    console.log('[GET /api/tasks] userId:', userId);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -28,23 +29,21 @@ export async function GET() {
       .limit(1)
       .single();
     if (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Supabase error fetching tasks:', error);
-      }
-      return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
+      console.error('[GET /api/tasks] Supabase error:', JSON.stringify(error));
+      return NextResponse.json({ error: 'Failed to fetch tasks', details: error.message }, { status: 500 });
     }
+    console.log('[GET /api/tasks] Success, data:', !!data);
     return NextResponse.json(data || {});
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching tasks:', error);
-    }
-    return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
+    console.error('[GET /api/tasks] Catch error:', error);
+    return NextResponse.json({ error: 'Failed to fetch tasks', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const { userId } = await auth();
+    console.log('[POST /api/tasks] userId:', userId);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -60,17 +59,14 @@ export async function POST(request: Request) {
         },
       ], { onConflict: 'user_id' });
     if (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Supabase error saving tasks:', error);
-      }
-      return NextResponse.json({ error: 'Failed to save tasks' }, { status: 500 });
+      console.error('[POST /api/tasks] Supabase error:', JSON.stringify(error));
+      return NextResponse.json({ error: 'Failed to save tasks', details: error.message }, { status: 500 });
     }
+    console.log('[POST /api/tasks] Success');
     // Return the timestamp so frontend can track it
     return NextResponse.json({ success: true, updated_at: timestamp });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error saving tasks:', error);
-    }
-    return NextResponse.json({ error: 'Failed to save tasks' }, { status: 500 });
+    console.error('[POST /api/tasks] Catch error:', error);
+    return NextResponse.json({ error: 'Failed to save tasks', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 } 
