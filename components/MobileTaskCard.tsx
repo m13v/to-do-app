@@ -46,6 +46,9 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
   const taskDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const categoryDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const subcategoryDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // Track if THIS card has unsaved changes to prevent unnecessary saves on re-render
+  const hasPendingChanges = useRef(false);
 
   useEffect(() => {
     setEditedTask(task);
@@ -82,12 +85,15 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
       console.log('[MobileTaskCard] Saving subcategory field:', editedTask.subcategory);
       onUpdate(task.id, 'subcategory', editedTask.subcategory);
     }
+    
+    // Clear dirty flag after saving
+    hasPendingChanges.current = false;
   }, [editedTask, task, onUpdate]);
 
   // Listen for visibility changes (app going to background)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden) {
+      if (document.hidden && hasPendingChanges.current) {
         console.log('[MobileTaskCard] Page becoming hidden, saving changes');
         savePendingChanges();
       }
@@ -97,8 +103,10 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      // Also save when component unmounts
-      savePendingChanges();
+      // Only save when component unmounts if THIS card has unsaved changes
+      if (hasPendingChanges.current) {
+        savePendingChanges();
+      }
     };
   }, [savePendingChanges]);
 
@@ -124,6 +132,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
             onChange={(e) => {
               const newValue = e.target.value;
               setEditedTask(prev => ({...prev, task: newValue}));
+              hasPendingChanges.current = true; // Mark as dirty
               
               // Debounced auto-save: save after 500ms of no typing
               if (taskDebounceTimer.current) {
@@ -132,6 +141,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
               taskDebounceTimer.current = setTimeout(() => {
                 console.log('[MobileTaskCard] Auto-saving task after debounce');
                 onUpdate(task.id, 'task', newValue);
+                hasPendingChanges.current = false; // Clear after save
               }, 500);
             }}
             onBlur={() => {
@@ -143,6 +153,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
               if(editedTask.task !== task.task) {
                 console.log('[MobileTaskCard] Saving task on blur');
                 onUpdate(task.id, 'task', editedTask.task);
+                hasPendingChanges.current = false; // Clear after save
               }
             }}
             onKeyDown={(e) => {
@@ -156,6 +167,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                 }
                 if(editedTask.task !== task.task) {
                   onUpdate(task.id, 'task', editedTask.task);
+                  hasPendingChanges.current = false; // Clear after save
                 }
                 // Create new task (same as clicking Plus icon)
                 onAdd(task.id);
@@ -206,6 +218,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                 onChange={(e) => {
                   const newValue = e.target.value;
                   setEditedTask(prev => ({...prev, category: newValue}));
+                  hasPendingChanges.current = true; // Mark as dirty
                   
                   // Debounced auto-save
                   if (categoryDebounceTimer.current) {
@@ -214,6 +227,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                   categoryDebounceTimer.current = setTimeout(() => {
                     console.log('[MobileTaskCard] Auto-saving category after debounce');
                     onUpdate(task.id, 'category', newValue);
+                    hasPendingChanges.current = false; // Clear after save
                   }, 500);
                 }}
                 onBlur={() => {
@@ -224,6 +238,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                   }
                   if (editedTask.category !== task.category) {
                     onUpdate(task.id, 'category', editedTask.category);
+                    hasPendingChanges.current = false; // Clear after save
                   }
                 }}
                 className="h-6 text-xs w-24 text-right border-0"
@@ -236,6 +251,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                 onChange={(e) => {
                   const newValue = e.target.value;
                   setEditedTask(prev => ({...prev, subcategory: newValue}));
+                  hasPendingChanges.current = true; // Mark as dirty
                   
                   // Debounced auto-save
                   if (subcategoryDebounceTimer.current) {
@@ -244,6 +260,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                   subcategoryDebounceTimer.current = setTimeout(() => {
                     console.log('[MobileTaskCard] Auto-saving subcategory after debounce');
                     onUpdate(task.id, 'subcategory', newValue);
+                    hasPendingChanges.current = false; // Clear after save
                   }, 500);
                 }}
                 onBlur={() => {
@@ -254,6 +271,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                   }
                   if (editedTask.subcategory !== task.subcategory) {
                     onUpdate(task.id, 'subcategory', editedTask.subcategory);
+                    hasPendingChanges.current = false; // Clear after save
                   }
                 }}
                 className="h-6 text-xs w-24 text-right border-0"
