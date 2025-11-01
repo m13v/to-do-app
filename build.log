@@ -1,0 +1,51 @@
+
+> todo-table-app@0.1.0 build
+> next build
+
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'api'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+   ▲ Next.js 15.3.3
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 0ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+Supabase Config: {
+  url: 'https://degqfkytflmqwguhmxqt.supabase.co',
+  hasKey: true,
+  keyPrefix: 'eyJhbGciOi'
+}
+   Generating static pages (0/10) ...
+   Generating static pages (2/10) 
+Supabase Config: {
+  url: 'https://degqfkytflmqwguhmxqt.supabase.co',
+  hasKey: true,
+  keyPrefix: 'eyJhbGciOi'
+}
+   Generating static pages (4/10) 
+   Generating static pages (7/10) 
+ ✓ Generating static pages (10/10)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                     152 kB         302 kB
+├ ○ /_not-found                            977 B         102 kB
+├ ƒ /api/ai                                144 B         101 kB
+├ ƒ /api/gemini                            144 B         101 kB
+├ ƒ /api/prompts                           144 B         101 kB
+├ ƒ /api/tasks                             144 B         101 kB
+└ ○ /open-in-browser                     1.77 kB         121 kB
++ First Load JS shared by all             101 kB
+  ├ chunks/4bd1b696-04224bd5b4b31c55.js  53.2 kB
+  ├ chunks/684-f17f16a2e81c6d6e.js       45.9 kB
+  └ other shared chunks (total)          1.99 kB
+
+
+ƒ Middleware                             77.4 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -79,34 +79,31 @@ const TaskRow: React.FC<TaskRowProps> = ({
     }
     
     if (e.key === 'ArrowUp') {
-      // For multiline textareas, only navigate to previous row if cursor is at the start of the text
-      // Check if cursor is on first line by comparing cursor position to text before first newline
+      // For textareas, only navigate to previous row if cursor is at the very start of the text
+      // This handles both hard line breaks (newlines) and soft-wrapped lines
       const isTextarea = target.tagName === 'TEXTAREA';
       if (isTextarea) {
         const cursorPos = target.selectionStart || 0;
-        const textBeforeCursor = target.value.substring(0, cursorPos);
-        const hasNewlineBeforeCursor = textBeforeCursor.includes('\n');
         
-        // Only navigate to previous row if there's no newline before cursor (i.e., on first line)
-        if (hasNewlineBeforeCursor) {
-          // Let the default behavior handle navigation within the textarea
+        // Only navigate to previous row if cursor is at position 0 (absolute start)
+        // Let browser handle all internal navigation (both newlines and wrapped lines)
+        if (cursorPos > 0) {
           return;
         }
       }
       e.preventDefault();
       focusCell(Math.max(0, index - 1), colIndex);
     } else if (e.key === 'ArrowDown') {
-      // For multiline textareas, only navigate to next row if cursor is at the end of the text
-      // Check if cursor is on last line by comparing cursor position to text after last newline
+      // For textareas, only navigate to next row if cursor is at the very end of the text
+      // This handles both hard line breaks (newlines) and soft-wrapped lines
       const isTextarea = target.tagName === 'TEXTAREA';
       if (isTextarea) {
         const cursorPos = target.selectionStart || 0;
-        const textAfterCursor = target.value.substring(cursorPos);
-        const hasNewlineAfterCursor = textAfterCursor.includes('\n');
+        const textLength = target.value.length;
         
-        // Only navigate to next row if there's no newline after cursor (i.e., on last line)
-        if (hasNewlineAfterCursor) {
-          // Let the default behavior handle navigation within the textarea
+        // Only navigate to next row if cursor is at the end (absolute end)
+        // Let browser handle all internal navigation (both newlines and wrapped lines)
+        if (cursorPos < textLength) {
           return;
         }
       }
@@ -189,7 +186,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
               onChange={(e) => handleChange('category', e.target.value)}
               onBlur={() => handleBlur('category')}
               onKeyDown={(e) => handleKeyDown(e, 0)}
-          className="h-5 py-0 px-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="py-0 px-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs leading-tight"
+          style={{ height: "21px" }}
             />
           </TableCell>
       <TableCell className="font-medium" style={columnWidths ? { width: `${columnWidths.subcategory}px` } : undefined}>
@@ -199,12 +197,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
               onChange={(e) => handleChange('subcategory', e.target.value)}
               onBlur={() => handleBlur('subcategory')}
               onKeyDown={(e) => handleKeyDown(e, 1)}
-          className="h-5 py-0 px-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="py-0 px-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs leading-tight"
+          style={{ height: "21px" }}
             />
           </TableCell>
       <TableCell style={columnWidths ? { width: `${columnWidths.status}px` } : undefined}>
             <Select value={editedTask.status} onValueChange={(value) => handleChange('status', value)}>
-          <SelectTrigger id={`cell-${index}-2`} onFocus={() => focusCell(index, 2)} className="h-5 py-0 px-2 border-0 focus:ring-0">
+          <SelectTrigger id={`cell-${index}-2`} onFocus={() => focusCell(index, 2)} size="xs" className="px-2 border-0 focus:ring-0">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -223,7 +222,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               onBlur={() => handleBlur('task')}
               onKeyDown={(e) => handleKeyDown(e, 3)}
           className={cn(
-            "min-h-[20px] py-0 px-1 border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0",
+            "min-h-[21px] py-0 px-1 border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs leading-tight",
             !isTextWrapped && "whitespace-nowrap overflow-hidden text-ellipsis"
           )}
               rows={1}

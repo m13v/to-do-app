@@ -22,7 +22,8 @@ const NumberStepper: React.FC<NumberStepperProps> = ({ value, onChange, onBlur, 
       value={value}
       onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
       onBlur={onBlur}
-      className="h-8 w-16 text-center"
+      className="w-16 text-center py-0 px-1 text-xs"
+      style={{ height: "21px" }}
     />
   </div>
 );
