@@ -173,10 +173,10 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
             onClick={() => setIsCollapsed(!isCollapsed)}
             size="sm"
             variant="ghost"
-            className="h-6 w-6 p-0 flex-shrink-0"
+            className="h-5 w-5 p-0 flex-shrink-0"
             aria-label={isCollapsed ? "Expand details" : "Collapse details"}
           >
-            {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            {isCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
           </Button>
         </div>
         {!isCollapsed && (
@@ -275,31 +275,31 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
           </div>
         </div>
         )}
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2">
-            <strong className="text-sm font-medium text-foreground">Today:</strong>
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-1.5">
+            <strong className="text-xs font-medium text-foreground">Today:</strong>
             <Checkbox
               checked={!!task.today}
               onCheckedChange={checked => onUpdate(task.id, 'today', !!checked)}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
             <Button 
               onClick={() => setIsTextWrapped(!isTextWrapped)} 
               size="sm" 
               variant="ghost" 
-              className="h-6 px-2"
+              className="h-5 px-1.5"
               title={isTextWrapped ? "Unwrap text (fit to one line)" : "Wrap text (show all lines)"}
             >
-              <WrapText className={cn("h-4 w-4", !isTextWrapped && "text-blue-600")} />
+              <WrapText className={cn("h-3.5 w-3.5", !isTextWrapped && "text-blue-600")} />
             </Button>
-            <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-6 px-2">
-              <Plus className="h-4 w-4 mr-1" />
-              Add
+            <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-5 px-1.5">
+              <Plus className="h-3.5 w-3.5 mr-0.5" />
+              <span className="text-xs">Add</span>
             </Button>
-            <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-6 px-2">
-              <X className="h-4 w-4 mr-1" />
-              Delete
+            <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-5 px-1.5">
+              <X className="h-3.5 w-3.5 mr-0.5" />
+              <span className="text-xs">Delete</span>
             </Button>
           </div>
         </div>

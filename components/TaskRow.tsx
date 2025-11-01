@@ -79,9 +79,37 @@ const TaskRow: React.FC<TaskRowProps> = ({
     }
     
     if (e.key === 'ArrowUp') {
+      // For multiline textareas, only navigate to previous row if cursor is at the start of the text
+      // Check if cursor is on first line by comparing cursor position to text before first newline
+      const isTextarea = target.tagName === 'TEXTAREA';
+      if (isTextarea) {
+        const cursorPos = target.selectionStart || 0;
+        const textBeforeCursor = target.value.substring(0, cursorPos);
+        const hasNewlineBeforeCursor = textBeforeCursor.includes('\n');
+        
+        // Only navigate to previous row if there's no newline before cursor (i.e., on first line)
+        if (hasNewlineBeforeCursor) {
+          // Let the default behavior handle navigation within the textarea
+          return;
+        }
+      }
       e.preventDefault();
       focusCell(Math.max(0, index - 1), colIndex);
     } else if (e.key === 'ArrowDown') {
+      // For multiline textareas, only navigate to next row if cursor is at the end of the text
+      // Check if cursor is on last line by comparing cursor position to text after last newline
+      const isTextarea = target.tagName === 'TEXTAREA';
+      if (isTextarea) {
+        const cursorPos = target.selectionStart || 0;
+        const textAfterCursor = target.value.substring(cursorPos);
+        const hasNewlineAfterCursor = textAfterCursor.includes('\n');
+        
+        // Only navigate to next row if there's no newline after cursor (i.e., on last line)
+        if (hasNewlineAfterCursor) {
+          // Let the default behavior handle navigation within the textarea
+          return;
+        }
+      }
       e.preventDefault();
       focusCell(Math.min(Infinity, index + 1), colIndex); // Assume large number for row count, parent will handle bounds
     } else if (e.key === 'ArrowLeft') {
