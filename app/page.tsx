@@ -78,6 +78,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [categoryComboOpen, setCategoryComboOpen] = useState(false);
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
+  const [subcategoryComboOpen, setSubcategoryComboOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [statusComboOpen, setStatusComboOpen] = useState(false);
   const [sortField, setSortField] = useState<SortField>('priority');
@@ -118,6 +120,15 @@ export default function Home() {
     if (storedFilter) {
       setCategoryFilter(storedFilter);
       console.log('Category filter loaded from localStorage:', storedFilter);
+    }
+  }, []);
+  
+  // Load subcategory filter from localStorage after hydration to avoid hydration mismatch
+  useEffect(() => {
+    const storedSubcategoryFilter = localStorage.getItem('subcategoryFilter');
+    if (storedSubcategoryFilter) {
+      setSubcategoryFilter(storedSubcategoryFilter);
+      console.log('Subcategory filter loaded from localStorage:', storedSubcategoryFilter);
     }
   }, []);
   
@@ -182,13 +193,20 @@ export default function Home() {
     return Array.from(categories).sort();
   }, [allTasks]);
 
+  // Extract unique subcategories for the filter dropdown
+  const uniqueSubcategories = useMemo(() => {
+    const subcategories = new Set(allTasks.map(task => task.subcategory.trim()).filter(sub => sub !== ''));
+    return Array.from(subcategories).sort();
+  }, [allTasks]);
+
   const filteredAllTasks = useMemo(() => allTasks.filter(task => {
     const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.task.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
+    const matchesSubcategory = subcategoryFilter === 'all' || task.subcategory === subcategoryFilter;
     const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-    return matchesSearch && matchesCategory && matchesStatus;
-  }), [allTasks, searchQuery, categoryFilter, statusFilter]);
+    return matchesSearch && matchesCategory && matchesSubcategory && matchesStatus;
+  }), [allTasks, searchQuery, categoryFilter, subcategoryFilter, statusFilter]);
 
   const saveTasks = useCallback(async (tasksToSave: Task[], forceSync = false): Promise<boolean> => {
     setSaving(true);
@@ -401,6 +419,12 @@ export default function Home() {
     localStorage.setItem('categoryFilter', categoryFilter);
     console.log('Category filter saved to localStorage:', categoryFilter);
   }, [categoryFilter]);
+  
+  // Persist subcategory filter to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('subcategoryFilter', subcategoryFilter);
+    console.log('Subcategory filter saved to localStorage:', subcategoryFilter);
+  }, [subcategoryFilter]);
   
   // Persist status filter to localStorage whenever it changes
   useEffect(() => {
@@ -776,9 +800,10 @@ export default function Home() {
     const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.task.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
+    const matchesSubcategory = subcategoryFilter === 'all' || task.subcategory === subcategoryFilter;
     const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-    return matchesSearch && matchesCategory && matchesStatus;
-  }), [activeTasks, searchQuery, categoryFilter, statusFilter]);
+    return matchesSearch && matchesCategory && matchesSubcategory && matchesStatus;
+  }), [activeTasks, searchQuery, categoryFilter, subcategoryFilter, statusFilter]);
 
   const sortedActiveTasks = useMemo(() => {
     const sortableTasks = [...filteredActiveTasks];
@@ -805,7 +830,7 @@ export default function Home() {
   // Reset to page 1 when filter/search/sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, categoryFilter, statusFilter, sortField, sortDirection]);
+  }, [searchQuery, categoryFilter, subcategoryFilter, statusFilter, sortField, sortDirection]);
 
   // Calculate pagination values
   const totalPages = Math.ceil(sortedActiveTasks.length / TASKS_PER_PAGE);
@@ -1169,6 +1194,58 @@ export default function Home() {
                                   className={categoryFilter === category ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
                                 />
                                 {category}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <Popover open={subcategoryComboOpen} onOpenChange={setSubcategoryComboOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={subcategoryComboOpen}
+                        className="w-full md:w-[200px] h-9 justify-between"
+                      >
+                        {subcategoryFilter === 'all' 
+                          ? 'All Subcategories' 
+                          : uniqueSubcategories.find((sub) => sub === subcategoryFilter) || 'All Subcategories'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search subcategories..." />
+                        <CommandList>
+                          <CommandEmpty>No subcategory found.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              value="all"
+                              onSelect={() => {
+                                setSubcategoryFilter('all');
+                                setSubcategoryComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={subcategoryFilter === 'all' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              All Subcategories
+                            </CommandItem>
+                            {uniqueSubcategories.map((subcategory) => (
+                              <CommandItem
+                                key={subcategory}
+                                value={subcategory}
+                                onSelect={(currentValue) => {
+                                  setSubcategoryFilter(currentValue);
+                                  setSubcategoryComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={subcategoryFilter === subcategory ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                                />
+                                {subcategory}
                               </CommandItem>
                             ))}
                           </CommandGroup>
