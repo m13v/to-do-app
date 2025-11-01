@@ -190,7 +190,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
       <TableCell style={columnWidths ? { width: `${columnWidths.task}px` } : undefined}>
             <Textarea
               id={`cell-${index}-3`}
-              value={editedTask.task}
+              value={isTextWrapped ? editedTask.task : editedTask.task.replace(/\n/g, ' ')}
               onChange={(e) => handleChange('task', e.target.value)}
               onBlur={() => handleBlur('task')}
               onKeyDown={(e) => handleKeyDown(e, 3)}

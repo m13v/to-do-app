@@ -12,6 +12,12 @@ export const metadata: Metadata = {
   description: "A smart to-do list powered by AI.",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
