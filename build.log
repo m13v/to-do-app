@@ -9,7 +9,7 @@
    - Environments: .env.local
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 1000ms
+ ✓ Compiled successfully in 2000ms
    Linting and checking validity of types ...
    Collecting page data ...
 Supabase Config: {
@@ -31,7 +31,7 @@ Supabase Config: {
    Collecting build traces ...
 
 Route (app)                                 Size  First Load JS
-┌ ○ /                                     152 kB         302 kB
+┌ ○ /                                     154 kB         304 kB
 ├ ○ /_not-found                            977 B         102 kB
 ├ ƒ /api/ai                                144 B         101 kB
 ├ ƒ /api/gemini                            144 B         101 kB

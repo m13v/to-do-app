@@ -86,6 +86,7 @@ export default function Home() {
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
+  const [authError, setAuthError] = useState(false); // Track 401 auth errors separately
   const [retrying, setRetrying] = useState(false);
   const [countdown, setCountdown] = useState(180);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -244,7 +245,15 @@ export default function Home() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('[Save Tasks] Server error:', response.status, errorText);
-          setSyncError(true);
+          // Check if it's an auth error (401)
+          if (response.status === 401) {
+            console.error('[Save Tasks] Auth error detected - session expired');
+            setAuthError(true);
+            setSyncError(false);
+          } else {
+            setSyncError(true);
+            setAuthError(false);
+          }
           return false; // Return false to indicate sync failure
         }
         // Track the server content after successful save
@@ -257,11 +266,15 @@ export default function Home() {
         localStorage.setItem('baseVersion', JSON.stringify(tasksToSave));
         console.log('[Base Version] Updated after successful save');
         setSyncError(false);
+        setAuthError(false); // Clear auth error on successful sync
       }
       return true;
     } catch (error) {
       console.error('[Save Tasks] Error saving tasks:', error);
-      if (isSignedIn) setSyncError(true);
+      if (isSignedIn) {
+        setSyncError(true);
+        setAuthError(false);
+      }
       return false; 
     } finally {
       setSaving(false);
@@ -297,6 +310,7 @@ export default function Home() {
       const success = await saveTasks(allTasks, true);
       if (success) {
         setSyncError(false);
+        setAuthError(false); // Clear auth error on successful sync
         toast.success("Successfully synced with server!");
         console.log('[Retry Sync] Sync successful');
       } else {
@@ -419,6 +433,11 @@ export default function Home() {
         } else {
           serverFetchError = true;
           console.error('Server responded with an error:', response.status);
+          // Check if it's an auth error (401)
+          if (response.status === 401) {
+            console.error('[Load Tasks] Auth error detected - session expired');
+            setAuthError(true);
+          }
         }
       } catch (error) {
         serverFetchError = true;
@@ -556,12 +575,12 @@ export default function Home() {
   }, [processingAI]);
 
   useEffect(() => {
-    if (loading || !user || syncError) return;
+    if (loading || !user || syncError || authError) return;
     const handler = setTimeout(() => {
       saveTasks(allTasks);
     }, 10000);
     return () => clearTimeout(handler);
-  }, [allTasks, loading, user, saveTasks, syncError]);
+  }, [allTasks, loading, user, saveTasks, syncError, authError]);
 
   // Polling mechanism - check for conflicts every 30 seconds
   useEffect(() => {
@@ -1138,6 +1157,39 @@ export default function Home() {
           {isHeaderCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </Button>
       </header>
+      
+      {/* Error banners pinned at top - outside of scrollable main */}
+      {authError && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 px-4 py-3 flex items-center justify-center gap-2" role="alert">
+          <span className="font-medium">Your session has expired. Please sign in again to sync your tasks to the cloud. Your tasks are safe locally.</span>
+          <SignInButton mode="modal">
+            <Button variant="outline" size="sm" className="ml-2">
+              Sign In
+            </Button>
+          </SignInButton>
+        </div>
+      )}
+      {syncError && !authError && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 flex items-center justify-center gap-2" role="alert">
+          <span>Could not sync with server. Your tasks are safe locally.</span>
+          <Button 
+            onClick={retrySync} 
+            variant="outline" 
+            size="sm" 
+            disabled={retrying}
+          >
+            {retrying ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                Retrying...
+              </>
+            ) : (
+              'Retry'
+            )}
+          </Button>
+        </div>
+      )}
+      
       <main className="flex-1 overflow-y-auto p-2 md:p-4">
         <SignedOut>
           <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4" role="alert">
@@ -1153,27 +1205,6 @@ export default function Home() {
               </div>
             ) : (
               <>
-                {syncError && (
-                  <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-2 text-center flex items-center justify-center gap-2">
-                    <span>Could not sync with server. Your tasks are safe locally.</span>
-                    <Button 
-                      onClick={retrySync} 
-                      variant="ghost" 
-                      size="sm" 
-                      disabled={retrying}
-                      className="underline text-red-700 hover:text-red-800 h-auto p-1"
-                    >
-                      {retrying ? (
-                        <>
-                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                          Retrying...
-                        </>
-                      ) : (
-                        'Retry'
-                      )}
-                    </Button>
-                  </div>
-                )}
 
                 {conflictDetected && (
                   <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 px-4 py-3 rounded mb-2" role="alert">
