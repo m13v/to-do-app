@@ -23,6 +23,8 @@ interface MobileTaskCardProps {
   isSelected?: boolean;
   onToggleSelect?: (taskId: string) => void;
   isDraggable?: boolean;
+  isTextWrapped?: boolean;
+  onToggleTextWrap?: () => void;
 }
 
 const MobileTaskCard: React.FC<MobileTaskCardProps> = ({ 
@@ -34,13 +36,13 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
   onPriorityChange, 
   isSelected = false, 
   onToggleSelect,
-  isDraggable = true
+  isDraggable = true,
+  isTextWrapped = true,
+  onToggleTextWrap
 }) => {
   const [editedTask, setEditedTask] = useState(task);
   // Collapse state for the metadata section
   const [isCollapsed, setIsCollapsed] = useState(false);
-  // State to track if text should be wrapped or not (local UI state, not persisted)
-  const [isTextWrapped, setIsTextWrapped] = useState(true);
   
   // Debounce timer refs for auto-save
   const taskDebounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -303,7 +305,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
           </div>
           <div className="flex items-center gap-0.5">
             <Button 
-              onClick={() => setIsTextWrapped(!isTextWrapped)} 
+              onClick={() => onToggleTextWrap?.()} 
               size="sm" 
               variant="ghost" 
               className="h-5 px-1.5"

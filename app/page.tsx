@@ -97,6 +97,8 @@ export default function Home() {
   const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
   // Selected tasks state - track which tasks are selected via checkbox
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  // Text wrapping state - track if task text should wrap or show as single line
+  const [isTextWrapped, setIsTextWrapped] = useState(true);
   
   // Load header collapse state from localStorage after hydration
   useEffect(() => {
@@ -152,6 +154,15 @@ export default function Home() {
       } catch (error) {
         console.error('Failed to parse stored column widths:', error);
       }
+    }
+  }, []);
+  
+  // Load text wrapping state from localStorage after hydration
+  useEffect(() => {
+    const stored = localStorage.getItem('isTextWrapped');
+    if (stored !== null) {
+      setIsTextWrapped(stored === 'true');
+      console.log('Text wrapping state loaded from localStorage:', stored === 'true');
     }
   }, []);
   // Pagination state - render only 200 tasks at a time for performance
@@ -437,6 +448,12 @@ export default function Home() {
     localStorage.setItem('columnWidths', JSON.stringify(columnWidths));
     console.log('Column widths saved to localStorage:', columnWidths);
   }, [columnWidths]);
+  
+  // Persist text wrapping state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('isTextWrapped', String(isTextWrapped));
+    console.log('Text wrapping state saved to localStorage:', isTextWrapped);
+  }, [isTextWrapped]);
   
   // Effect to sync local tasks on sign-in
   // Only uploads local tasks if server has no tasks (new user)
@@ -1557,6 +1574,8 @@ export default function Home() {
                                         isSelected={selectedTaskIds.has(task.id)}
                                         onToggleSelect={handleToggleTaskSelection}
                                         columnWidths={columnWidths}
+                                        isTextWrapped={isTextWrapped}
+                                        onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
                                       />
                                     ))}
                                     {provided.placeholder}
@@ -1580,6 +1599,8 @@ export default function Home() {
                                     onPriorityChange={handlePriorityChange}
                                     isSelected={selectedTaskIds.has(task.id)}
                                     onToggleSelect={handleToggleTaskSelection}
+                                    isTextWrapped={isTextWrapped}
+                                    onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
                                   />
                                 ))}
                                 {provided.placeholder}
@@ -1697,6 +1718,8 @@ export default function Home() {
                                       isSelected={selectedTaskIds.has(task.id)}
                                       onToggleSelect={handleToggleTaskSelection}
                                       columnWidths={columnWidths}
+                                      isTextWrapped={isTextWrapped}
+                                      onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
                                     />
                                   ))}
                                   {provided.placeholder}
@@ -1720,6 +1743,8 @@ export default function Home() {
                                   onPriorityChange={handlePriorityChange}
                                   isSelected={selectedTaskIds.has(task.id)}
                                   onToggleSelect={handleToggleTaskSelection}
+                                  isTextWrapped={isTextWrapped}
+                                  onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
                                 />
                               ))}
                               {provided.placeholder}
@@ -1841,6 +1866,8 @@ export default function Home() {
                                     isSelected={selectedTaskIds.has(task.id)}
                                     onToggleSelect={handleToggleTaskSelection}
                                     columnWidths={columnWidths}
+                                    isTextWrapped={isTextWrapped}
+                                    onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
                                   />
                                 ))}
                               </TableBody>

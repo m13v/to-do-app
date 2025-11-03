@@ -40,6 +40,8 @@ interface TaskRowProps {
     today: number;
     actions: number;
   };
+  isTextWrapped?: boolean;
+  onToggleTextWrap?: () => void;
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({
@@ -54,10 +56,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
   isSelected = false,
   onToggleSelect,
   columnWidths,
+  isTextWrapped = true,
+  onToggleTextWrap,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
-  // State to track if text should be wrapped or not (local UI state, not persisted)
-  const [isTextWrapped, setIsTextWrapped] = useState(true);
 
   const numCols = 5; // Category, Subcategory, Status, Task, Today
 
@@ -246,7 +248,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
       <TableCell className="text-right" style={columnWidths ? { width: `${columnWidths.actions}px` } : undefined}>
         <div className="flex items-center justify-end gap-0">
               <Button
-                onClick={() => setIsTextWrapped(!isTextWrapped)}
+                onClick={() => onToggleTextWrap?.()}
                 size="sm"
                 variant="ghost"
                 className="h-5 w-5 p-0"

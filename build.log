@@ -9,7 +9,7 @@
    - Environments: .env.local
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 0ms
+ ✓ Compiled successfully in 1000ms
    Linting and checking validity of types ...
    Collecting page data ...
 Supabase Config: {
@@ -18,12 +18,12 @@ Supabase Config: {
   keyPrefix: 'eyJhbGciOi'
 }
    Generating static pages (0/10) ...
-   Generating static pages (2/10) 
 Supabase Config: {
   url: 'https://degqfkytflmqwguhmxqt.supabase.co',
   hasKey: true,
   keyPrefix: 'eyJhbGciOi'
 }
+   Generating static pages (2/10) 
    Generating static pages (4/10) 
    Generating static pages (7/10) 
  ✓ Generating static pages (10/10)
