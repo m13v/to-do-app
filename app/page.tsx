@@ -26,6 +26,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { toast } from "sonner"
 import { generateDiff } from '@/lib/diff';
+import { mergeTasks, MergeResult } from '@/lib/merge';
 import AnimatedTitle from '@/components/AnimatedTitle';
 import { useMediaQuery } from '@/lib/hooks/use-media-query';
 import MobileTaskCard from '@/components/MobileTaskCard';
@@ -35,16 +36,16 @@ import CategoriesManager from '@/components/CategoriesManager';
 type SortField = 'priority' | 'category' | 'task';
 type SortDirection = 'asc' | 'desc';
 
-const defaultTasksMarkdown = `| P | Category | Subcategory | Task | Status | Today | Created |
-|---|---|---|---|---|---|----------|
-| 1 | Welcome | | Welcome to your new task manager! | to_do | | ${new Date().toISOString().split('T')[0]} |
-| 2 | Welcome | | Click on any task text to edit it. | to_do | | ${new Date().toISOString().split('T')[0]} |
-| 3 | Welcome | | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | | ${new Date().toISOString().split('T')[0]} |
-| 4 | Welcome | | Drag and drop tasks to reorder them. | to_do | | ${new Date().toISOString().split('T')[0]} |
-| 5 | Welcome | | Use the search bar to filter your tasks. | to_do | | ${new Date().toISOString().split('T')[0]} |
-| 6 | Welcome | | Click on the column headers to sort your list. | to_do | | ${new Date().toISOString().split('T')[0]} |
-| 7 | Welcome | | Use the AI Assistant to manage your tasks with natural language. | to_do | | ${new Date().toISOString().split('T')[0]} |
-| 8 | Welcome | | Delete these welcome tasks when you're ready to start. | to_do | | ${new Date().toISOString().split('T')[0]} |
+const defaultTasksMarkdown = `| P | Category | Subcategory | Task | Status | Today | Created | Updated |
+|---|---|---|---|---|---|----------|----------|
+| 1 | Welcome | | Welcome to your new task manager! | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 2 | Welcome | | Click on any task text to edit it. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 3 | Welcome | | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 4 | Welcome | | Drag and drop tasks to reorder them. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 5 | Welcome | | Use the search bar to filter your tasks. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 6 | Welcome | | Click on the column headers to sort your list. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 7 | Welcome | | Use the AI Assistant to manage your tasks with natural language. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 8 | Welcome | | Delete these welcome tasks when you're ready to start. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
 `;
 
 const systemPrompt = `You are an AI assistant helping to manage a todo list. The user will provide a markdown table and a prompt.
@@ -172,6 +173,11 @@ export default function Home() {
   const [lastKnownServerContent, setLastKnownServerContent] = useState<string | null>(null);
   const [conflictDetected, setConflictDetected] = useState(false);
   const [conflictData, setConflictData] = useState<{ serverContent: string; serverTimestamp: string } | null>(null);
+  // Base version for three-way merge - the last common state both devices had
+  const [baseVersion, setBaseVersion] = useState<Task[] | null>(null);
+  // Merge result state for showing merge preview (for future UI enhancement)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [mergeResult, setMergeResult] = useState<MergeResult | null>(null);
   // Tab state for switching between Tasks and Categories views
   const [activeTab, setActiveTab] = useState<string>('tasks');
   // Column width state for resizable columns - synced across both Today's and main tables
@@ -246,6 +252,10 @@ export default function Home() {
         console.log('[Save Tasks] Successfully synced with server');
         console.log('[Conflict Detection] Updated local content after save');
         setLastKnownServerContent(markdown);
+        // Update base version after successful sync - this is now the common state
+        setBaseVersion(tasksToSave);
+        localStorage.setItem('baseVersion', JSON.stringify(tasksToSave));
+        console.log('[Base Version] Updated after successful save');
         setSyncError(false);
       }
       return true;
@@ -363,11 +373,48 @@ export default function Home() {
           const data = await response.json();
           if (data && data.content) {
             console.log("Successfully fetched tasks from server.");
-            loadedTasks = parseMarkdownTable(data.content);
-            localStorage.setItem('markdownContent', data.content);
+            const serverTasks = parseMarkdownTable(data.content);
+            
+            // Check if we have local changes that need to be merged
+            const storedMarkdown = localStorage.getItem('markdownContent');
+            const storedBaseVersion = localStorage.getItem('baseVersion');
+            
+            if (storedMarkdown && storedBaseVersion) {
+              const localTasks = parseMarkdownTable(storedMarkdown);
+              const baseVersionTasks = JSON.parse(storedBaseVersion) as Task[];
+              
+              // Check if local has uncommitted changes
+              const localContent = tasksToMarkdown(localTasks);
+              const baseContent = tasksToMarkdown(baseVersionTasks);
+              
+              if (localContent !== baseContent) {
+                // Local has changes - need to merge
+                console.log('[Load Tasks] Local changes detected, performing merge...');
+                const result = mergeTasks(baseVersionTasks, localTasks, serverTasks);
+                loadedTasks = result.merged;
+                setMergeResult(result);
+                
+                // Show merge summary
+                if (result.changes.length > 0 || result.conflicts.length > 0) {
+                  console.log('[Merge] Changes:', result.changes.length, 'Conflicts:', result.conflicts.length);
+                  toast.success(`Merged changes from both devices: ${result.changes.length} changes, ${result.conflicts.length} conflicts resolved`);
+                }
+              } else {
+                // No local changes - just use server version
+                loadedTasks = serverTasks;
+              }
+            } else {
+              // No base version stored - just use server version
+              loadedTasks = serverTasks;
+            }
+            
+            localStorage.setItem('markdownContent', tasksToMarkdown(loadedTasks));
             // Track the initial server content
             console.log('[Conflict Detection] Initial server content stored');
             setLastKnownServerContent(data.content);
+            // Set base version to what we just loaded
+            setBaseVersion(loadedTasks);
+            localStorage.setItem('baseVersion', JSON.stringify(loadedTasks));
           }
         } else {
           serverFetchError = true;
@@ -541,15 +588,43 @@ export default function Home() {
             // Only conflict if BOTH server and local have changed
             if (serverChanged && localChanged) {
               console.log('[Conflict Detection] ⚠️ CONFLICT DETECTED - Both server and local have changes!');
-              setConflictDetected(true);
-              // Ensure timestamp is valid - if not, use current time
-              const validTimestamp = data.updated_at && typeof data.updated_at === 'string' && !isNaN(Date.parse(data.updated_at))
-                ? data.updated_at
-                : new Date().toISOString();
-              setConflictData({
-                serverContent: data.content,
-                serverTimestamp: validTimestamp
-              });
+              
+              // Perform automatic merge
+              const serverTasks = parseMarkdownTable(serverContent);
+              const result = mergeTasks(baseVersion, allTasks, serverTasks);
+              
+              console.log('[Auto-Merge] Merged tasks automatically:', result.merged.length);
+              console.log('[Auto-Merge] Changes:', result.changes.length, 'Conflicts:', result.conflicts.length);
+              
+              // Update state with merged result
+              setActiveTasks(result.merged.filter(t => t.status !== 'done'));
+              setDoneTasks(result.merged.filter(t => t.status === 'done'));
+              
+              // Update history
+              const newHistorySlice = history.slice(0, historyIndex + 1);
+              const updatedHistory = [...newHistorySlice, result.merged];
+              if (updatedHistory.length > 21) {
+                updatedHistory.shift();
+              }
+              setHistory(updatedHistory);
+              setHistoryIndex(updatedHistory.length - 1);
+              
+              // Save merged result
+              const mergedMarkdown = tasksToMarkdown(result.merged);
+              localStorage.setItem('markdownContent', mergedMarkdown);
+              setLastKnownServerContent(mergedMarkdown);
+              setBaseVersion(result.merged);
+              localStorage.setItem('baseVersion', JSON.stringify(result.merged));
+              
+              // Show notification
+              if (result.conflicts.length > 0) {
+                toast.info(`Auto-merged changes with ${result.conflicts.length} conflicts resolved`);
+              } else {
+                toast.success('Auto-merged changes from both devices');
+              }
+              
+              // Store merge result for user review
+              setMergeResult(result);
             } else if (serverChanged && !localChanged) {
               // Server changed but we haven't - safe to auto-update
               console.log('[Conflict Detection] Server updated, no local changes - auto-syncing');
@@ -558,6 +633,8 @@ export default function Home() {
               setDoneTasks(serverTasks.filter(t => t.status === 'done'));
               localStorage.setItem('markdownContent', serverContent);
               setLastKnownServerContent(serverContent);
+              setBaseVersion(serverTasks);
+              localStorage.setItem('baseVersion', JSON.stringify(serverTasks));
             }
           }
         }
@@ -570,7 +647,7 @@ export default function Home() {
     const intervalId = setInterval(checkForConflicts, 30000);
     
     return () => clearInterval(intervalId);
-  }, [isSignedIn, loading, lastKnownServerContent, allTasks]);
+  }, [isSignedIn, loading, lastKnownServerContent, allTasks, baseVersion, history, historyIndex]);
 
   const handleAIPrompt = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -734,6 +811,7 @@ export default function Home() {
     let taskToMove: Task | undefined;
     const updatedActive = [...activeTasks];
     const updatedDone = [...doneTasks];
+    const now = new Date().toISOString();
 
     const isStatusChangeToDone = field === 'status' && value === 'done';
     const isStatusChangeFromDone = field === 'status' && value !== 'done';
@@ -745,19 +823,21 @@ export default function Home() {
       [taskToMove] = updatedActive.splice(activeIndex, 1);
       if (taskToMove) {
         taskToMove.status = 'done';
+        taskToMove.updated_at = now;
         updatedDone.unshift(taskToMove);
       }
     } else if (isStatusChangeFromDone && doneIndex !== -1) {
       [taskToMove] = updatedDone.splice(doneIndex, 1);
       if (taskToMove) {
         taskToMove.status = value as string;
+        taskToMove.updated_at = now;
         updatedActive.push(taskToMove);
       }
     } else {
       if (activeIndex !== -1) {
-        updatedActive[activeIndex] = { ...updatedActive[activeIndex], [field]: value };
+        updatedActive[activeIndex] = { ...updatedActive[activeIndex], [field]: value, updated_at: now };
       } else if (doneIndex !== -1) {
-        updatedDone[doneIndex] = { ...updatedDone[doneIndex], [field]: value };
+        updatedDone[doneIndex] = { ...updatedDone[doneIndex], [field]: value, updated_at: now };
       }
     }
     
@@ -785,7 +865,18 @@ export default function Home() {
     const category = newTasks[afterIndex]?.category || 'NEW';
     const subcategory = newTasks[afterIndex]?.subcategory || '';
     const newPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0) + 1;
-    const newTask: Task = { id: `${Date.now()}-${Math.random()}`, priority: newPriority, category, subcategory, task: '', status: 'to_do', today: false, created_at: new Date().toISOString() };
+    const now = new Date().toISOString();
+    const newTask: Task = { 
+      id: `${Date.now()}-${Math.random()}`, 
+      priority: newPriority, 
+      category, 
+      subcategory, 
+      task: '', 
+      status: 'to_do', 
+      today: false, 
+      created_at: now,
+      updated_at: now
+    };
     const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
     

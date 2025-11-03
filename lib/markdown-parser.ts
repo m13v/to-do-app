@@ -7,6 +7,27 @@ export interface Task {
   status: string;
   today: boolean;
   created_at: string; // ISO 8601 timestamp
+  updated_at: string; // ISO 8601 timestamp - when task was last modified
+}
+
+// Generate a stable ID based on creation time and initial content
+// This ensures the same task has the same ID across devices
+function generateStableId(created_at: string, task: string, category: string): string {
+  // Use created_at + first 50 chars of task + category as stable identifier
+  const content = `${created_at}|${task.substring(0, 50)}|${category}`;
+  
+  // Simple hash function (djb2 algorithm)
+  let hash = 5381;
+  for (let i = 0; i < content.length; i++) {
+    hash = ((hash << 5) + hash) + content.charCodeAt(i);
+  }
+  
+  // Convert to positive hex string
+  const hashStr = (hash >>> 0).toString(16).padStart(8, '0');
+  
+  // Combine with timestamp for uniqueness
+  const timestamp = new Date(created_at).getTime().toString(16);
+  return `task-${timestamp}-${hashStr}`;
 }
 
 export function parseMarkdownTable(markdown: string): Task[] {
@@ -32,6 +53,7 @@ export function parseMarkdownTable(markdown: string): Task[] {
   const statusIndex = headers.indexOf('status');
   const todayIndex = headers.indexOf('today');
   const createdIndex = headers.indexOf('created');
+  const updatedIndex = headers.indexOf('updated');
 
   const taskLines = lines.slice(lines.indexOf(headerLine) + 2);
   console.log('[parseMarkdownTable] Task lines to parse:', taskLines.length);
@@ -59,16 +81,32 @@ export function parseMarkdownTable(markdown: string): Task[] {
       }
     }
     
+    // Parse updated_at: use existing value if present and valid, otherwise use created_at
+    const updatedValue = getValue(updatedIndex);
+    let updated_at = created_at; // default to created_at
+    if (updatedValue !== '') {
+      const parsedDate = new Date(updatedValue);
+      if (!isNaN(parsedDate.getTime())) {
+        updated_at = parsedDate.toISOString();
+      }
+    }
+    
+    const category = getValue(categoryIndex);
+    const taskText = getValue(taskIndex).replace(/<br\s*\/?>/gi, '\n');
+    
+    // Generate stable ID based on created_at and content
+    const id = generateStableId(created_at, taskText, category);
+    
     return {
-      id: `${Date.now()}-${Math.random()}-${index}`,
+      id,
       priority,
-      category: getValue(categoryIndex),
+      category,
       subcategory: getValue(subcategoryIndex),
-      // Convert <br> tags back to newlines for multi-line task support
-      task: getValue(taskIndex).replace(/<br\s*\/?>/gi, '\n'),
+      task: taskText,
       status: getValue(statusIndex),
       today: todayIndex !== -1 ? getValue(todayIndex).toLowerCase() === 'yes' : false,
       created_at,
+      updated_at,
     };
   }).filter((task): task is Task => task !== null);
   
@@ -77,8 +115,8 @@ export function parseMarkdownTable(markdown: string): Task[] {
 }
 
 export function tasksToMarkdown(tasks: Task[]): string {
-  let markdown = '| P | Category | Subcategory | Task | Status | Today | Created |\n';
-  markdown += '|---|----------|-------------|------|--------|-------|----------|\n';
+  let markdown = '| P | Category | Subcategory | Task | Status | Today | Created | Updated |\n';
+  markdown += '|---|----------|-------------|------|--------|-------|---------|----------|\n';
   
   // Sort tasks by priority before converting to markdown
   const sortedTasks = [...tasks].sort((a, b) => a.priority - b.priority);
@@ -94,7 +132,15 @@ export function tasksToMarkdown(tasks: Task[]): string {
         createdDate = parsedDate.toISOString().split('T')[0];
       }
     }
-    markdown += `| ${task.priority} | ${task.category} | ${task.subcategory} | ${taskWithBreaks} | ${task.status} | ${task.today ? 'yes' : ''} | ${createdDate} |\n`;
+    // Format updated_at to a readable date (YYYY-MM-DD), validate date first
+    let updatedDate = '';
+    if (task.updated_at) {
+      const parsedDate = new Date(task.updated_at);
+      if (!isNaN(parsedDate.getTime())) {
+        updatedDate = parsedDate.toISOString().split('T')[0];
+      }
+    }
+    markdown += `| ${task.priority} | ${task.category} | ${task.subcategory} | ${taskWithBreaks} | ${task.status} | ${task.today ? 'yes' : ''} | ${createdDate} | ${updatedDate} |\n`;
   }
   
   return markdown;
