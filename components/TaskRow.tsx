@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Draggable, DraggableProvided } from '@hello-pangea/dnd';
 import { Task } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
   onToggleTextWrap,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
+  // Track if user is actively editing to prevent cursor position loss during re-renders
+  const hasPendingChanges = useRef(false);
 
   const numCols = 5; // Category, Subcategory, Status, Task, Today
 
@@ -75,6 +77,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
       if (editedTask.task !== task.task) {
         handleTaskUpdate(task.id, 'task', editedTask.task);
       }
+      // Clear pending changes flag before creating new task
+      hasPendingChanges.current = false;
       // Create new task (same as clicking Plus icon)
       handleAddTask(task.id);
       return;
@@ -125,17 +129,25 @@ const TaskRow: React.FC<TaskRowProps> = ({
   };
 
   useEffect(() => {
-    setEditedTask(task);
+    // Only sync with prop if we don't have unsaved local changes
+    // This prevents cursor position from being reset during active editing
+    if (!hasPendingChanges.current) {
+      setEditedTask(task);
+    }
   }, [task]);
 
   const debouncedUpdate = useDebouncedCallback(
     (field: keyof Omit<Task, 'id' | 'priority'> | 'today', value: string | boolean) => {
       handleTaskUpdate(task.id, field, value);
+      // Clear pending changes flag after update completes
+      hasPendingChanges.current = false;
     },
     300
   );
 
   const handleChange = (field: keyof Omit<Task, 'id' | 'priority'>, value: string | boolean) => {
+    // Mark that we have pending changes to prevent cursor position loss
+    hasPendingChanges.current = true;
     setEditedTask(prev => ({ ...prev, [field]: value }));
     debouncedUpdate(field, value);
   };
@@ -145,6 +157,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
     if (editedTask[field as keyof Task] !== task[field as keyof Task]) {
       handleTaskUpdate(task.id, field, String(editedTask[field as keyof Task]));
     }
+    // Clear pending changes flag after blur to allow syncing from props again
+    hasPendingChanges.current = false;
   };
 
   const rowContent = (provided?: DraggableProvided) => (
