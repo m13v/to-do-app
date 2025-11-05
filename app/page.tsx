@@ -68,6 +68,13 @@ export default function Home() {
   const [doneTasks, setDoneTasks] = useState<Task[]>([]);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Track if user was previously signed in to detect session expiration
+  const [wasSignedIn, setWasSignedIn] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('wasSignedIn') === 'true';
+    }
+    return false;
+  });
   const [saving, setSaving] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [processingAI, setProcessingAI] = useState(false);
@@ -245,11 +252,14 @@ export default function Home() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('[Save Tasks] Server error:', response.status, errorText);
-          // Check if it's an auth error (401)
-          if (response.status === 401) {
-            console.error('[Save Tasks] Auth error detected - session expired');
+          // Check if it's an auth error (401) AND user was previously signed in
+          if (response.status === 401 && wasSignedIn) {
+            console.error('[Save Tasks] Auth error detected - session expired for previously signed in user');
             setAuthError(true);
             setSyncError(false);
+          } else if (response.status === 401) {
+            console.log('[Save Tasks] 401 error but user was never signed in - ignoring');
+            // Don't set any error for new users getting 401
           } else {
             setSyncError(true);
             setAuthError(false);
@@ -433,10 +443,12 @@ export default function Home() {
         } else {
           serverFetchError = true;
           console.error('Server responded with an error:', response.status);
-          // Check if it's an auth error (401)
-          if (response.status === 401) {
-            console.error('[Load Tasks] Auth error detected - session expired');
+          // Check if it's an auth error (401) AND user was previously signed in
+          if (response.status === 401 && wasSignedIn) {
+            console.error('[Load Tasks] Auth error detected - session expired for previously signed in user');
             setAuthError(true);
+          } else if (response.status === 401) {
+            console.log('[Load Tasks] 401 error but user was never signed in - ignoring');
           }
         }
       } catch (error) {
@@ -478,6 +490,15 @@ export default function Home() {
       loadTasks();
     }
   }, [isLoaded, isSignedIn, loadTasks]);
+
+  // Track when user signs in to detect future session expiration
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      console.log('[Auth Tracking] User is signed in, setting wasSignedIn flag');
+      setWasSignedIn(true);
+      sessionStorage.setItem('wasSignedIn', 'true');
+    }
+  }, [isLoaded, isSignedIn]);
 
   // Persist header collapse state to localStorage
   useEffect(() => {
