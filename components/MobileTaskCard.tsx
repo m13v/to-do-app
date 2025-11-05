@@ -53,11 +53,18 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
   const hasPendingChanges = useRef(false);
 
   useEffect(() => {
-    // Only sync with prop if we don't have unsaved local changes
-    // This prevents input from being reset mid-typing on mobile
-    if (!hasPendingChanges.current) {
-      setEditedTask(task);
-    }
+    // Only sync with prop if local state matches incoming prop
+    // If they differ, user has unsaved changes - don't reset their input
+    // This prevents input reset during active typing on mobile
+    setEditedTask(prev => {
+      const hasLocalChanges = 
+        prev.task !== task.task ||
+        prev.category !== task.category ||
+        prev.subcategory !== task.subcategory;
+      
+      // Only sync from props if no local changes exist
+      return hasLocalChanges ? prev : task;
+    });
   }, [task]);
 
   // Save pending changes immediately (called before navigation/backgrounding)

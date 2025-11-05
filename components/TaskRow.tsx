@@ -129,11 +129,20 @@ const TaskRow: React.FC<TaskRowProps> = ({
   };
 
   useEffect(() => {
-    // Only sync with prop if we don't have unsaved local changes
-    // This prevents cursor position from being reset during active editing
-    if (!hasPendingChanges.current) {
-      setEditedTask(task);
-    }
+    // Only sync with prop if local state matches incoming prop
+    // If they differ, user has unsaved changes - don't reset cursor position
+    // This prevents input reset during active editing
+    setEditedTask(prev => {
+      const hasLocalChanges = 
+        prev.task !== task.task ||
+        prev.category !== task.category ||
+        prev.subcategory !== task.subcategory ||
+        prev.status !== task.status ||
+        prev.today !== task.today;
+      
+      // Only sync from props if no local changes exist
+      return hasLocalChanges ? prev : task;
+    });
   }, [task]);
 
   const debouncedUpdate = useDebouncedCallback(
