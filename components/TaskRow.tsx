@@ -235,6 +235,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 <SelectItem value="to_do">To Do</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="waiting">Waiting</SelectItem>
+                <SelectItem value="testing">Testing</SelectItem>
                 <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>

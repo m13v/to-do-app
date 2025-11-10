@@ -1426,6 +1426,7 @@ export default function Home() {
                           : statusFilter === 'to_do' ? 'To Do'
                           : statusFilter === 'in_progress' ? 'In Progress'
                           : statusFilter === 'waiting' ? 'Waiting'
+                          : statusFilter === 'testing' ? 'Testing'
                           : statusFilter === 'done' ? 'Done'
                           : 'All Statuses'}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1484,6 +1485,18 @@ export default function Home() {
                                 className={statusFilter === 'waiting' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
                               />
                               Waiting
+                            </CommandItem>
+                            <CommandItem
+                              value="testing"
+                              onSelect={() => {
+                                setStatusFilter('testing');
+                                setStatusComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={statusFilter === 'testing' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              Testing
                             </CommandItem>
                             <CommandItem
                               value="done"
