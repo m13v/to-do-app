@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import NumberStepper from './NumberStepper';
 import { Draggable, DraggableProvided } from '@hello-pangea/dnd';
 
 interface MobileTaskCardProps {
@@ -41,8 +40,8 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
   onToggleTextWrap
 }) => {
   const [editedTask, setEditedTask] = useState(task);
-  // Collapse state for the metadata section
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Collapse state for the metadata section (collapsed by default)
+  const [isCollapsed, setIsCollapsed] = useState(true);
   
   // Debounce timer refs for auto-save
   const taskDebounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -129,17 +128,9 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
       ref={provided?.innerRef}
       {...(provided?.draggableProps || {})}
     >
-      <CardContent className="p-1.5 space-y-1">
-        <div className="flex items-start gap-0.5">
-          <div {...(provided?.dragHandleProps || {})} className="cursor-grab active:cursor-grabbing mt-1">
-            {isDraggable ? <GripVertical className="h-4 w-4 text-muted-foreground" /> : <div className="w-4" />}
-          </div>
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={() => onToggleSelect?.(task.id)}
-            aria-label={`Select task ${task.task}`}
-            className="mt-1"
-          />
+      <CardContent className="p-1.5">
+        {/* First line: Task name only */}
+        <div>
           <Textarea
             value={isTextWrapped ? editedTask.task : editedTask.task.replace(/\n/g, ' ')}
             onChange={(e) => {
@@ -187,113 +178,35 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
               }
             }}
             className={cn(
-              "flex-1 text-sm font-semibold p-1 resize-none border rounded-md shadow-none focus-visible:ring-1",
+              "w-full text-sm font-semibold p-1 resize-none border rounded-md shadow-none focus-visible:ring-1",
               task.status === 'done' && 'line-through',
               !isTextWrapped && "whitespace-nowrap overflow-hidden text-ellipsis"
             )}
-            rows={Math.max(1, Math.floor(editedTask.task.length / 35))}
+            rows={isTextWrapped ? Math.max(2, Math.ceil(editedTask.task.length / 40)) : 1}
             data-task-id={task.id}
           />
-          <Button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            size="sm"
-            variant="ghost"
-            className="h-5 w-5 p-0 flex-shrink-0"
-            aria-label={isCollapsed ? "Expand details" : "Collapse details"}
-          >
-            {isCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-          </Button>
         </div>
-        {!isCollapsed && (
-          <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-3 gap-y-0.5">
-          <div className="flex items-center justify-between">
-            <NumberStepper
-              title="Priority:"
+        
+        {/* Second line: Priority, Status, Category, and Expand toggle */}
+        <div className="flex items-center gap-2 text-xs mt-1">
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">Priority:</span>
+            <Input
+              type="number"
               value={editedTask.priority}
-              onChange={(newVal) => {
+              onChange={(e) => {
+                const newVal = parseInt(e.target.value) || 0;
                 setEditedTask(prev => ({ ...prev, priority: newVal }));
-                // Immediately update priority when buttons are clicked
                 onPriorityChange(task.id, newVal);
               }}
-              onBlur={() => {
-                if (editedTask.priority !== task.priority) {
-                  onPriorityChange(task.id, editedTask.priority);
-                }
-              }}
-              showLabels={true}
+              className="h-5 w-6 text-xs text-center border rounded px-1"
             />
           </div>
-          <div></div>
-          <div className="flex items-center justify-between">
-            <strong className="text-foreground">Category:</strong>
-            <Input
-                value={editedTask.category}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setEditedTask(prev => ({...prev, category: newValue}));
-                  hasPendingChanges.current = true; // Mark as dirty
-                  
-                  // Debounced auto-save
-                  if (categoryDebounceTimer.current) {
-                    clearTimeout(categoryDebounceTimer.current);
-                  }
-                  categoryDebounceTimer.current = setTimeout(() => {
-                    console.log('[MobileTaskCard] Auto-saving category after debounce');
-                    onUpdate(task.id, 'category', newValue);
-                    hasPendingChanges.current = false; // Clear after save
-                  }, 500);
-                }}
-                onBlur={() => {
-                  // Clear debounce and save immediately on blur
-                  if (categoryDebounceTimer.current) {
-                    clearTimeout(categoryDebounceTimer.current);
-                    categoryDebounceTimer.current = null;
-                  }
-                  if (editedTask.category !== task.category) {
-                    onUpdate(task.id, 'category', editedTask.category);
-                    hasPendingChanges.current = false; // Clear after save
-                  }
-                }}
-                className="h-6 text-xs w-24 text-right border-0"
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <strong className="text-foreground">Subcategory:</strong>
-            <Input
-                value={editedTask.subcategory}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setEditedTask(prev => ({...prev, subcategory: newValue}));
-                  hasPendingChanges.current = true; // Mark as dirty
-                  
-                  // Debounced auto-save
-                  if (subcategoryDebounceTimer.current) {
-                    clearTimeout(subcategoryDebounceTimer.current);
-                  }
-                  subcategoryDebounceTimer.current = setTimeout(() => {
-                    console.log('[MobileTaskCard] Auto-saving subcategory after debounce');
-                    onUpdate(task.id, 'subcategory', newValue);
-                    hasPendingChanges.current = false; // Clear after save
-                  }, 500);
-                }}
-                onBlur={() => {
-                  // Clear debounce and save immediately on blur
-                  if (subcategoryDebounceTimer.current) {
-                    clearTimeout(subcategoryDebounceTimer.current);
-                    subcategoryDebounceTimer.current = null;
-                  }
-                  if (editedTask.subcategory !== task.subcategory) {
-                    onUpdate(task.id, 'subcategory', editedTask.subcategory);
-                    hasPendingChanges.current = false; // Clear after save
-                  }
-                }}
-                className="h-6 text-xs w-24 text-right border-0"
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <strong className="text-foreground">Status:</strong>
+          
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">Status:</span>
             <Select value={editedTask.status} onValueChange={(value) => onUpdate(task.id, 'status', value)}>
-              <SelectTrigger className="h-6 text-xs w-24 border-0 justify-end">
+              <SelectTrigger className="h-5 text-xs w-20 border-0 p-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -305,36 +218,107 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
               </SelectContent>
             </Select>
           </div>
-        </div>
-        )}
-        <div className="flex items-center justify-between mt-1">
-          <div className="flex items-center gap-1.5">
-            <strong className="text-xs font-medium text-foreground">Today:</strong>
-            <Checkbox
-              checked={!!task.today}
-              onCheckedChange={checked => onUpdate(task.id, 'today', !!checked)}
+          
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">Cat:</span>
+            <Input
+              value={editedTask.category}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setEditedTask(prev => ({...prev, category: newValue}));
+                hasPendingChanges.current = true;
+                
+                if (categoryDebounceTimer.current) {
+                  clearTimeout(categoryDebounceTimer.current);
+                }
+                categoryDebounceTimer.current = setTimeout(() => {
+                  onUpdate(task.id, 'category', newValue);
+                  hasPendingChanges.current = false;
+                }, 500);
+              }}
+              onBlur={() => {
+                if (categoryDebounceTimer.current) {
+                  clearTimeout(categoryDebounceTimer.current);
+                  categoryDebounceTimer.current = null;
+                }
+                if (editedTask.category !== task.category) {
+                  onUpdate(task.id, 'category', editedTask.category);
+                  hasPendingChanges.current = false;
+                }
+              }}
+              className="h-5 text-xs w-16 border rounded px-1"
             />
           </div>
-          <div className="flex items-center gap-0.5">
-            <Button 
-              onClick={() => onToggleTextWrap?.()} 
-              size="sm" 
-              variant="ghost" 
-              className="h-5 px-1.5"
-              title={isTextWrapped ? "Unwrap text (fit to one line)" : "Wrap text (show all lines)"}
+          
+          <div className="ml-auto">
+            <Button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              size="sm"
+              variant="ghost"
+              className="h-5 w-5 p-0"
+              aria-label={isCollapsed ? "Expand details" : "Collapse details"}
             >
-              <WrapText className={cn("h-3.5 w-3.5", !isTextWrapped && "text-blue-600")} />
-            </Button>
-            <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-5 px-1.5">
-              <Plus className="h-3.5 w-3.5 mr-0.5" />
-              <span className="text-xs">Add</span>
-            </Button>
-            <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-5 px-1.5">
-              <X className="h-3.5 w-3.5 mr-0.5" />
-              <span className="text-xs">Delete</span>
+              {isCollapsed ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
             </Button>
           </div>
         </div>
+        {/* Third line: Collapsible area with additional controls */}
+        {!isCollapsed && (
+          <div className="pt-1 border-t border-muted">
+            <div className="flex items-center gap-1 text-xs">
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Subcategory:</span>
+                <Input
+                  value={editedTask.subcategory}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setEditedTask(prev => ({...prev, subcategory: newValue}));
+                    hasPendingChanges.current = true;
+                    
+                    if (subcategoryDebounceTimer.current) {
+                      clearTimeout(subcategoryDebounceTimer.current);
+                    }
+                    subcategoryDebounceTimer.current = setTimeout(() => {
+                      onUpdate(task.id, 'subcategory', newValue);
+                      hasPendingChanges.current = false;
+                    }, 500);
+                  }}
+                  onBlur={() => {
+                    if (subcategoryDebounceTimer.current) {
+                      clearTimeout(subcategoryDebounceTimer.current);
+                      subcategoryDebounceTimer.current = null;
+                    }
+                    if (editedTask.subcategory !== task.subcategory) {
+                      onUpdate(task.id, 'subcategory', editedTask.subcategory);
+                      hasPendingChanges.current = false;
+                    }
+                  }}
+                  className="h-5 text-xs w-16 border rounded px-1"
+                />
+              </div>
+              
+              <Button 
+                onClick={() => onToggleTextWrap?.()} 
+                size="sm" 
+                variant="ghost" 
+                className="h-5 px-1.5"
+                title={isTextWrapped ? "Unwrap text (fit to one line)" : "Wrap text (show all lines)"}
+              >
+                <WrapText className={cn("h-3.5 w-3.5", !isTextWrapped && "text-blue-600")} />
+              </Button>
+              
+              <Button onClick={() => onAdd(task.id)} size="sm" variant="ghost" className="h-5 px-1.5">
+                <Plus className="h-3.5 w-3.5 mr-0.5" />
+                <span className="text-xs">Add</span>
+              </Button>
+              
+              <Button onClick={() => onDelete(task.id)} size="sm" variant="ghost" className="h-5 px-1.5">
+                <X className="h-3.5 w-3.5 mr-0.5" />
+                <span className="text-xs">Delete</span>
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
