@@ -4,8 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Task } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
-import { Plus, X, ChevronDown, ChevronUp, GripVertical, WrapText } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, X, ChevronDown, ChevronUp, WrapText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -19,8 +18,6 @@ interface MobileTaskCardProps {
   onDelete: (id: string) => void;
   onAdd: (id: string) => void;
   onPriorityChange: (id: string, newPriority: number) => void;
-  isSelected?: boolean;
-  onToggleSelect?: (taskId: string) => void;
   isDraggable?: boolean;
   isTextWrapped?: boolean;
   onToggleTextWrap?: () => void;
@@ -33,8 +30,6 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
   onDelete, 
   onAdd, 
   onPriorityChange, 
-  isSelected = false, 
-  onToggleSelect,
   isDraggable = true,
   isTextWrapped = true,
   onToggleTextWrap

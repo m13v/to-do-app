@@ -1753,8 +1753,6 @@ export default function Home() {
                                     onDelete={handleDeleteTask}
                                     onAdd={() => handleAddTask(task.id)}
                                     onPriorityChange={handlePriorityChange}
-                                    isSelected={selectedTaskIds.has(task.id)}
-                                    onToggleSelect={handleToggleTaskSelection}
                                     isTextWrapped={isTextWrapped}
                                     onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
                                   />
@@ -1897,8 +1895,6 @@ export default function Home() {
                                   onDelete={handleDeleteTask}
                                   onAdd={() => handleAddTask(task.id)}
                                   onPriorityChange={handlePriorityChange}
-                                  isSelected={selectedTaskIds.has(task.id)}
-                                  onToggleSelect={handleToggleTaskSelection}
                                   isTextWrapped={isTextWrapped}
                                   onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
                                 />
