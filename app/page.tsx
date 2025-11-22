@@ -1016,8 +1016,21 @@ export default function Home() {
       if (content) {
         const importedTasks = parseMarkdownTable(content);
         console.log('[File Import] Parsed tasks:', importedTasks.length);
-        updateAndSaveTasks(importedTasks);
-        alert(`${importedTasks.length} tasks imported successfully.`);
+        console.log('[File Import] Existing tasks:', allTasks.length);
+
+        // Merge imported tasks with existing tasks
+        const mergeResult = mergeTasks(null, allTasks, importedTasks);
+        console.log('[File Import] Merged tasks:', mergeResult.merged.length);
+        console.log('[File Import] Changes:', mergeResult.changes.length);
+
+        updateAndSaveTasks(mergeResult.merged);
+
+        // Build summary message
+        const added = mergeResult.changes.filter(c => c.type === 'added' && c.source === 'server').length;
+        const updated = mergeResult.changes.filter(c => c.type === 'modified' && c.source === 'server').length;
+        const kept = mergeResult.merged.length - added;
+
+        alert(`Import complete:\n• ${added} new tasks added\n• ${updated} tasks updated\n• ${kept} existing tasks kept`);
       }
     };
     reader.onerror = (error) => {
