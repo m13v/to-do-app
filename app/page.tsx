@@ -131,9 +131,9 @@ export default function Home() {
       console.log('Text wrapping state loaded from localStorage:', stored === 'true');
     }
   }, []);
-  // Pagination state - render only 200 tasks at a time for performance
+  // Pagination state - render only 600 tasks at a time for performance
   const [currentPage, setCurrentPage] = useState(1);
-  const TASKS_PER_PAGE = 200;
+  const TASKS_PER_PAGE = 600;
   // Conflict detection state - track server content to detect concurrent edits
   const [lastKnownServerContent, setLastKnownServerContent] = useState<string | null>(null);
   const [conflictDetected, setConflictDetected] = useState(false);
