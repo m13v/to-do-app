@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Undo, Redo, Check, ChevronsUpDown } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
-import { parseMarkdownTable, tasksToMarkdown, Task } from '@/lib/markdown-parser';
+import { parseMarkdownTable, tasksToMarkdown, Task, TaskColor, TASK_COLORS } from '@/lib/markdown-parser';
 import TaskRow from '@/components/TaskRow';
 import {
   Dialog,
@@ -66,6 +66,8 @@ export default function Home() {
   const [subcategoryComboOpen, setSubcategoryComboOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [statusComboOpen, setStatusComboOpen] = useState(false);
+  const [colorFilter, setColorFilter] = useState<string>('all');
+  const [colorComboOpen, setColorComboOpen] = useState(false);
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [syncError, setSyncError] = useState(false);
@@ -74,6 +76,8 @@ export default function Home() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportableMarkdown, setExportableMarkdown] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement>(null);
+  const [stickyHeaderHeight, setStickyHeaderHeight] = useState(0);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   // Text wrapping state - track if task text should wrap or show as single line
   const [isTextWrapped, setIsTextWrapped] = useState(true);
@@ -108,7 +112,16 @@ export default function Home() {
       console.log('Status filter loaded from localStorage:', storedStatusFilter);
     }
   }, []);
-  
+
+  // Load color filter from localStorage after hydration to avoid hydration mismatch
+  useEffect(() => {
+    const storedColorFilter = localStorage.getItem('colorFilter');
+    if (storedColorFilter) {
+      setColorFilter(storedColorFilter);
+      console.log('Color filter loaded from localStorage:', storedColorFilter);
+    }
+  }, []);
+
   // Load column widths from localStorage after hydration
   useEffect(() => {
     const storedWidths = localStorage.getItem('columnWidths');
@@ -131,6 +144,26 @@ export default function Home() {
       console.log('Text wrapping state loaded from localStorage:', stored === 'true');
     }
   }, []);
+
+  // Measure sticky header height for table header offset using callback ref
+  const stickyHeaderCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      stickyHeaderRef.current = node;
+
+      const updateHeight = () => {
+        setStickyHeaderHeight(node.offsetHeight);
+      };
+
+      const resizeObserver = new ResizeObserver(() => {
+        updateHeight();
+      });
+
+      resizeObserver.observe(node);
+      // Set initial height immediately
+      updateHeight();
+    }
+  }, []);
+
   // Pagination state - render only 600 tasks at a time for performance
   const [currentPage, setCurrentPage] = useState(1);
   const TASKS_PER_PAGE = 600;
@@ -433,6 +466,43 @@ export default function Home() {
     }
   }, [isLoaded, isSignedIn, loadTasks]);
 
+  // Reset task colors at midnight (user's local time)
+  // Uses a ref to track if we've already reset today to avoid infinite loops
+  const colorResetChecked = useRef(false);
+  useEffect(() => {
+    if (activeTasks.length === 0 || colorResetChecked.current) return;
+
+    const today = new Date().toDateString();
+    const lastResetDate = localStorage.getItem('lastColorResetDate');
+
+    if (lastResetDate !== today) {
+      colorResetChecked.current = true; // Mark as checked to prevent re-runs
+
+      // Check if any tasks have non-white colors
+      const hasColoredTasks = activeTasks.some(t => t.color !== 'white') ||
+                              doneTasks.some(t => t.color !== 'white');
+
+      if (hasColoredTasks) {
+        console.log('[Color Reset] New day detected, resetting all task colors to white');
+        const resetActiveTasks = activeTasks.map(t => ({ ...t, color: 'white' as TaskColor }));
+        const resetDoneTasks = doneTasks.map(t => ({ ...t, color: 'white' as TaskColor }));
+
+        setActiveTasks(resetActiveTasks);
+        setDoneTasks(resetDoneTasks);
+
+        // Save the reset tasks
+        const allResetTasks = [...resetActiveTasks, ...resetDoneTasks];
+        saveTasks(allResetTasks);
+
+        toast.success('Task colors reset for new day');
+      }
+
+      localStorage.setItem('lastColorResetDate', today);
+    } else {
+      colorResetChecked.current = true; // Already reset today
+    }
+  }, [activeTasks, doneTasks, saveTasks]);
+
   // Track when user signs in to detect future session expiration
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -459,7 +529,13 @@ export default function Home() {
     localStorage.setItem('statusFilter', statusFilter);
     console.log('Status filter saved to localStorage:', statusFilter);
   }, [statusFilter]);
-  
+
+  // Persist color filter to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('colorFilter', colorFilter);
+    console.log('Color filter saved to localStorage:', colorFilter);
+  }, [colorFilter]);
+
   // Persist column widths to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('columnWidths', JSON.stringify(columnWidths));
@@ -780,8 +856,9 @@ export default function Home() {
     const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
     const matchesSubcategory = subcategoryFilter === 'all' || task.subcategory === subcategoryFilter;
     const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-    return matchesSearch && matchesCategory && matchesSubcategory && matchesStatus;
-  }), [activeTasks, searchQuery, categoryFilter, subcategoryFilter, statusFilter]);
+    const matchesColor = colorFilter === 'all' || task.color === colorFilter;
+    return matchesSearch && matchesCategory && matchesSubcategory && matchesStatus && matchesColor;
+  }), [activeTasks, searchQuery, categoryFilter, subcategoryFilter, statusFilter, colorFilter]);
 
   const sortedActiveTasks = useMemo(() => {
     const sortableTasks = [...filteredActiveTasks];
@@ -837,7 +914,7 @@ export default function Home() {
   // Reset to page 1 when filter/search/sort changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, categoryFilter, subcategoryFilter, statusFilter, sortField, sortDirection]);
+  }, [searchQuery, categoryFilter, subcategoryFilter, statusFilter, colorFilter, sortField, sortDirection]);
 
   // Calculate pagination values
   const totalPages = Math.ceil(sortedActiveTasks.length / TASKS_PER_PAGE);
@@ -1024,7 +1101,7 @@ export default function Home() {
         </div>
       )}
       
-      <main className="flex-1 overflow-y-auto p-2 md:p-4">
+      <main className="flex-1 overflow-y-auto">
         {isLoaded ? (
           <>
             {loading ? (
@@ -1034,46 +1111,48 @@ export default function Home() {
             ) : (
               <>
 
-                {conflictDetected && (
-                  <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 px-4 py-3 rounded mb-2" role="alert">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                      <div>
-                        <p className="font-bold">⚠️ Conflict Detected</p>
-                        <p className="text-sm">Your tasks were modified on another device. What would you like to do?</p>
-                      </div>
-                      <div className="flex gap-2 justify-end">
-                        <Button 
-                          onClick={handleReloadFromServer} 
-                          variant="outline" 
-                          size="sm"
-                          className="bg-white hover:bg-gray-50"
-                        >
-                          Reload (Use Server Data)
-                        </Button>
-                        <Button 
-                          onClick={handleKeepLocalData} 
-                          variant="default" 
-                          size="sm"
-                        >
-                          Keep Mine (Overwrite Server)
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  {/* Tab Navigation */}
-                  <div className="mb-3 p-2 bg-muted/30 rounded-md">
-                    <TabsList className="h-9">
-                      <TabsTrigger value="tasks">Tasks</TabsTrigger>
-                      <TabsTrigger value="categories">Categories</TabsTrigger>
-                    </TabsList>
-                  </div>
+                  {/* Sticky header container for desktop */}
+                  <div ref={stickyHeaderCallbackRef} className="md:sticky md:top-0 z-20 bg-background px-2 md:px-4 pt-2 md:pt-4 pb-2">
+                    {conflictDetected && (
+                      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 px-4 py-3 rounded mb-2" role="alert">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                          <div>
+                            <p className="font-bold">Conflict Detected</p>
+                            <p className="text-sm">Your tasks were modified on another device. What would you like to do?</p>
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              onClick={handleReloadFromServer}
+                              variant="outline"
+                              size="sm"
+                              className="bg-white hover:bg-gray-50"
+                            >
+                              Reload (Use Server Data)
+                            </Button>
+                            <Button
+                              onClick={handleKeepLocalData}
+                              variant="default"
+                              size="sm"
+                            >
+                              Keep Mine (Overwrite Server)
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Tab Navigation */}
+                    <div className="mb-3 p-2 bg-muted/30 rounded-md">
+                      <TabsList className="h-9">
+                        <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                        <TabsTrigger value="categories">Categories</TabsTrigger>
+                      </TabsList>
+                    </div>
 
-                  <TabsContent value="tasks" className="space-y-3">
-
-                <div className="mb-3 flex flex-col md:flex-row items-stretch md:items-center gap-2">
+                    {/* Filters and pagination - only when tasks tab is active */}
+                    {activeTab === 'tasks' && (
+                      <>
+                        <div className="mb-3 flex flex-col md:flex-row items-stretch md:items-center gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -1290,6 +1369,64 @@ export default function Home() {
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  <Popover open={colorComboOpen} onOpenChange={setColorComboOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={colorComboOpen}
+                        className="w-full md:w-[140px] h-9 justify-between"
+                      >
+                        {colorFilter === 'all'
+                          ? 'All Colors'
+                          : colorFilter.charAt(0).toUpperCase() + colorFilter.slice(1)}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[140px] p-0">
+                      <Command>
+                        <CommandList>
+                          <CommandGroup>
+                            <CommandItem
+                              value="all"
+                              onSelect={() => {
+                                setColorFilter('all');
+                                setColorComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={colorFilter === 'all' ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                              />
+                              All Colors
+                            </CommandItem>
+                            {TASK_COLORS.map((color) => (
+                              <CommandItem
+                                key={color}
+                                value={color}
+                                onSelect={() => {
+                                  setColorFilter(color);
+                                  setColorComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={colorFilter === color ? 'mr-2 h-4 w-4 opacity-100' : 'mr-2 h-4 w-4 opacity-0'}
+                                />
+                                <span
+                                  className={`w-3 h-3 rounded-full mr-2 ${
+                                    color === 'white' ? 'bg-white border border-gray-300' :
+                                    color === 'grey' ? 'bg-gray-400' :
+                                    color === 'red' ? 'bg-red-400' :
+                                    'bg-blue-400'
+                                  }`}
+                                />
+                                {color.charAt(0).toUpperCase() + color.slice(1)}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex items-center gap-2 justify-end">
                     <Button onClick={() => saveTasks(allTasks)} variant="outline" size="sm" disabled={saving}>
                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
@@ -1393,15 +1530,19 @@ export default function Home() {
                       </Button>
                     </div>
                   </div>
-                )}
+                        )}
+                      </>
+                    )}
+                  </div>
 
-                <Card>
-                  <CardContent className="py-2">
+                  <TabsContent value="tasks" className="mt-0 px-2 md:px-4 pb-2 md:pb-4">
+                    <Card className="overflow-visible">
+                  <CardContent className="py-2 overflow-visible">
                     <DragDropContext onDragEnd={handleDragEnd}>
                       {isDesktop ? (
-                        <div className="overflow-x-auto">
+                        <div>
                           <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
-                            <TableHeader className="sticky top-0 z-10 bg-background">
+                            <TableHeader className="sticky z-10 bg-background" style={{ top: `${stickyHeaderHeight}px` }}>
                               <TableRow>
                                 <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
                                   <div
@@ -1534,10 +1675,10 @@ export default function Home() {
                         </CardTitle>
                       </CardHeader>
                       {isArchiveOpen && (
-                        <CardContent className="py-2">
-                          <div className="overflow-x-auto">
+                        <CardContent className="py-2 overflow-visible">
+                          <div>
                             <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
-                              <TableHeader className="sticky top-0 z-10 bg-background">
+                              <TableHeader className="sticky z-10 bg-background" style={{ top: `${stickyHeaderHeight}px` }}>
                                 <TableRow>
                                   <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
                                     <div
@@ -1637,7 +1778,7 @@ export default function Home() {
                 )}
                   </TabsContent>
 
-                  <TabsContent value="categories" className="mt-4">
+                  <TabsContent value="categories" className="mt-4 px-2 md:px-4 pb-2 md:pb-4">
                     <CategoriesManager 
                       tasks={allTasks} 
                       onMergeCategories={handleMergeCategories}
