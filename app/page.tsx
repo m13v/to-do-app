@@ -1031,18 +1031,16 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Floating open source link in top left corner */}
-      <a
-        href="https://github.com/m13v/to-do-app"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed top-4 left-4 z-50 text-sm text-gray-400 hover:text-gray-600"
-      >
-        Open source
-      </a>
-
-      {/* Floating sign-in button in top right corner */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Floating top right corner */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+        <a
+          href="https://github.com/m13v/to-do-app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-gray-400 hover:text-gray-600"
+        >
+          Open source
+        </a>
         <SignedIn>
           <UserButton afterSignOutUrl="/"/>
         </SignedIn>
