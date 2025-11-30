@@ -1,18 +1,26 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-// Using service role key to bypass RLS since we authenticate with Clerk
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Prevent Next.js from pre-rendering this route during build
+export const dynamic = 'force-dynamic';
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Lazy-initialize Supabase client to avoid build-time errors
+let supabase: SupabaseClient | null = null;
 
-console.log('Supabase Config:', {
-  url: supabaseUrl,
-  hasKey: !!supabaseServiceKey,
-  keyPrefix: supabaseServiceKey.substring(0, 10)
-});
+function getSupabase(): SupabaseClient {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('Supabase Config:', {
+      url: supabaseUrl,
+      hasKey: !!supabaseServiceKey,
+      keyPrefix: supabaseServiceKey?.substring(0, 10)
+    });
+  }
+  return supabase;
+}
 
 export async function GET() {
   try {
@@ -21,7 +29,7 @@ export async function GET() {
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('todoapp_tasks')
       .select('content, updated_at')
       .eq('user_id', userId)
@@ -50,7 +58,7 @@ export async function POST(request: Request) {
     }
     const { content } = await request.json();
     const timestamp = new Date().toISOString();
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('todoapp_tasks')
       .upsert([
         {
@@ -70,4 +78,4 @@ export async function POST(request: Request) {
     console.error('[POST /api/tasks] Catch error:', error);
     return NextResponse.json({ error: 'Failed to save tasks', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
-} 
+}
