@@ -148,6 +148,20 @@
   background: rgba(0, 0, 0, 0.3);
 }
 
+/* Periodic glow animation for sign-in button */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px 0px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(59, 130, 246, 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
 /* Table styles */
 .table-row-hover {
   transition: background-color 0.2s ease;

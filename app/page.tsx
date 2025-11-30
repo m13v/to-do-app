@@ -9,11 +9,10 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, ChevronUp, Undo, Redo, Check, ChevronsUpDown } from 'lucide-react';
+import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Undo, Redo, Check, ChevronsUpDown } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { parseMarkdownTable, tasksToMarkdown, Task } from '@/lib/markdown-parser';
 import TaskRow from '@/components/TaskRow';
-import QuickPrompts from '@/components/QuickPrompts';
 import {
   Dialog,
   DialogContent,
@@ -25,9 +24,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { toast } from "sonner"
-import { generateDiff } from '@/lib/diff';
 import { mergeTasks, MergeResult } from '@/lib/merge';
-import AnimatedTitle from '@/components/AnimatedTitle';
 import { useMediaQuery } from '@/lib/hooks/use-media-query';
 import MobileTaskCard from '@/components/MobileTaskCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,22 +41,7 @@ const defaultTasksMarkdown = `| P | Category | Subcategory | Task | Status | Tod
 | 4 | Welcome | | Drag and drop tasks to reorder them. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
 | 5 | Welcome | | Use the search bar to filter your tasks. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
 | 6 | Welcome | | Click on the column headers to sort your list. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-| 7 | Welcome | | Use the AI Assistant to manage your tasks with natural language. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-| 8 | Welcome | | Delete these welcome tasks when you're ready to start. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-`;
-
-const systemPrompt = `You are an AI assistant helping to manage a todo list. The user will provide a markdown table and a prompt.
-Your task is to return a new, updated markdown table based on the user's prompt.
-
-**RULES:**
-1.  **ONLY** return the markdown table. Do not include any other text, titles, headers, or explanations.
-2.  The table structure is fixed. The columns are: | P | Category | Subcategory | Task | Status | Today | Created |
-3.  Do **NOT** add, remove, or rename any columns.
-4.  The "Created" column contains the creation date (YYYY-MM-DD format). When modifying existing tasks, preserve their Created date. For new tasks you create, use today's date: ${new Date().toISOString().split('T')[0]}
-5.  The "P" column is the priority number. You can modify this to reorder tasks.
-6.  The "Today" column should be "yes" for tasks to focus on today, or empty otherwise.
-7.  Preserve the pipe \`|\` separators and the markdown table format exactly.
-Your output will be parsed by a script, so any deviation from this format will break the application.
+| 7 | Welcome | | Delete these welcome tasks when you're ready to start. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
 `;
 
 export default function Home() {
@@ -76,13 +58,8 @@ export default function Home() {
     return false;
   });
   const [saving, setSaving] = useState(false);
-  const [prompt, setPrompt] = useState('');
-  const [processingAI, setProcessingAI] = useState(false);
-  const [aiGeneratedContent, setAiGeneratedContent] = useState<string | null>(null);
-  const [tasksSentToAI, setTasksSentToAI] = useState<Task[] | null>(null);
   const [history, setHistory] = useState<Task[][]>([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const [recentDiff, setRecentDiff] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [categoryComboOpen, setCategoryComboOpen] = useState(false);
@@ -95,15 +72,10 @@ export default function Home() {
   const [syncError, setSyncError] = useState(false);
   const [authError, setAuthError] = useState(false); // Track 401 auth errors separately
   const [retrying, setRetrying] = useState(false);
-  const [countdown, setCountdown] = useState(180);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportableMarkdown, setExportableMarkdown] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  // Header collapse state - initialize to false to avoid hydration mismatch, then load from localStorage
-  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
-  // Footer collapse state - initialize to false to avoid hydration mismatch, then load from localStorage
-  const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
   // Selected tasks state - track which tasks are selected via checkbox
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   // Text wrapping state - track if task text should wrap or show as single line
@@ -112,21 +84,6 @@ export default function Home() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingInsertIndex, setEditingInsertIndex] = useState<number | null>(null);
 
-  // Load header collapse state from localStorage after hydration
-  useEffect(() => {
-    const stored = localStorage.getItem('isHeaderCollapsed');
-    if (stored === 'true') {
-      setIsHeaderCollapsed(true);
-    }
-  }, []);
-  
-  // Load footer collapse state from localStorage after hydration
-  useEffect(() => {
-    const stored = localStorage.getItem('isFooterCollapsed');
-    if (stored === 'true') {
-      setIsFooterCollapsed(true);
-    }
-  }, []);
   
   // Load category filter from localStorage after hydration to avoid hydration mismatch
   useEffect(() => {
@@ -227,15 +184,6 @@ export default function Home() {
     return Array.from(subcategories).sort();
   }, [allTasks]);
 
-  const filteredAllTasks = useMemo(() => allTasks.filter(task => {
-    const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          task.task.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
-    const matchesSubcategory = subcategoryFilter === 'all' || task.subcategory === subcategoryFilter;
-    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-    return matchesSearch && matchesCategory && matchesSubcategory && matchesStatus;
-  }), [allTasks, searchQuery, categoryFilter, subcategoryFilter, statusFilter]);
-
   const saveTasks = useCallback(async (tasksToSave: Task[], forceSync = false): Promise<boolean> => {
     setSaving(true);
     try {
@@ -295,11 +243,7 @@ export default function Home() {
   }, [isSignedIn]);
 
   const updateAndSaveTasks = useCallback((newTasks: Task[], shouldRecordHistory: boolean = true) => {
-    const oldTasks = allTasks;
     if (shouldRecordHistory) {
-        const diff = generateDiff(oldTasks, newTasks);
-        setRecentDiff(diff);
-
         const newHistorySlice = history.slice(0, historyIndex + 1);
         const updatedHistory = [...newHistorySlice, newTasks];
         // Limit history to 20 undo steps + current state
@@ -503,18 +447,6 @@ export default function Home() {
     }
   }, [isLoaded, isSignedIn]);
 
-  // Persist header collapse state to localStorage
-  useEffect(() => {
-    localStorage.setItem('isHeaderCollapsed', String(isHeaderCollapsed));
-    console.log('Header collapse state saved to localStorage:', isHeaderCollapsed);
-  }, [isHeaderCollapsed]);
-  
-  // Persist footer collapse state to localStorage
-  useEffect(() => {
-    localStorage.setItem('isFooterCollapsed', String(isFooterCollapsed));
-    console.log('Footer collapse state saved to localStorage:', isFooterCollapsed);
-  }, [isFooterCollapsed]);
-  
   // Persist category filter to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('categoryFilter', categoryFilter);
@@ -578,25 +510,6 @@ export default function Home() {
         });
     }
   }, [isSignedIn, saveTasks]);
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (processingAI) {
-      setCountdown(180); // Reset countdown
-      timer = setInterval(() => {
-        setCountdown((prevCountdown) => {
-          if (prevCountdown > 1) {
-            return prevCountdown - 1;
-          }
-          clearInterval(timer);
-          return 0;
-        });
-      }, 1000);
-    }
-    return () => {
-      clearInterval(timer);
-    };
-  }, [processingAI]);
 
   useEffect(() => {
     if (loading || !user || syncError || authError) return;
@@ -692,93 +605,6 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, [isSignedIn, loading, lastKnownServerContent, allTasks, baseVersion, history, historyIndex]);
 
-  const handleAIPrompt = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!prompt.trim() || allTasks.length === 0) {
-      alert("Please enter a prompt and have at least one task before using the AI Assistant.");
-      return;
-    }
-
-    const tasksForAI = searchQuery.trim() ? filteredAllTasks : allTasks;
-    if (tasksForAI.length === 0) {
-      alert("Your filter returned no tasks. Please adjust your filter or clear it before using the AI assistant.");
-      return;
-    }
-
-    setProcessingAI(true);
-    setTasksSentToAI(tasksForAI);
-
-    try {
-      const userPromptWithContext = recentDiff 
-        ? `${prompt}\n\nFor context, here are my recent changes:\n${recentDiff}\n\nAnd here is the current task list:\n${tasksToMarkdown(tasksForAI)}`
-        : `${prompt}\n\n${tasksToMarkdown(tasksForAI)}`;
-
-      const response = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemPrompt,
-          userPrompt: userPromptWithContext,
-        }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 504) {
-          throw new Error("The request timed out as it was taking too long to process. This can happen with very large task lists. Please try filtering your tasks to reduce the size of the request.");
-        }
-        const errorData = await response.json();
-        const errorMessage = errorData.error || 'Failed to get response from AI';
-        const errorDetails = errorData.details ? `\n\nDetails: ${errorData.details}` : '';
-        alert(`AI Error: ${errorMessage}${errorDetails}`);
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      const parsed = parseMarkdownTable(data.content);
-
-      if (parsed.length === 0 && data.content.trim() !== '') {
-        throw new Error('AI response is not a valid markdown table.');
-      }
-      
-      setAiGeneratedContent(data.content);
-      toast.success("AI modifications generated successfully. Please review and confirm.");
-
-    } catch (error) {
-      console.error('Error processing AI prompt:', error);
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-      toast.error(`AI Processing Failed: ${errorMessage}`);
-    } finally {
-      setProcessingAI(false);
-    }
-  }, [prompt, allTasks, filteredAllTasks, searchQuery, recentDiff]);
-
-  const handleConfirmAIChanges = () => {
-    if (aiGeneratedContent && tasksSentToAI) {
-      try {
-        const parsedTasks = parseMarkdownTable(aiGeneratedContent);
-        
-        const taskIdsSentToAI = new Set(tasksSentToAI.map(t => t.id));
-        const tasksToKeep = allTasks.filter(t => !taskIdsSentToAI.has(t.id));
-
-        const finalTasks = [...tasksToKeep, ...parsedTasks];
-
-        updateAndSaveTasks(finalTasks);
-        setAiGeneratedContent(null);
-        setTasksSentToAI(null);
-        toast.success("AI changes applied successfully!");
-      } catch (error) {
-        console.error("Failed to apply AI changes:", error);
-        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-        toast.error(`Failed to apply AI changes: ${errorMessage}`);
-      }
-    }
-  };
-
-  const handleCancelAIChanges = () => {
-    setAiGeneratedContent(null);
-    setTasksSentToAI(null);
-  };
-  
   const handleUndo = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
@@ -844,11 +670,6 @@ export default function Home() {
   
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
   };
-
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    handleAIPrompt(e);
-  }, [handleAIPrompt]);
 
   const handleTaskUpdate = useCallback((id: string, field: keyof Omit<Task, 'id'> | 'today', value: string | boolean) => {
     let taskToMove: Task | undefined;
@@ -1210,30 +1031,27 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="border-b relative">
-        {!isHeaderCollapsed && (
-          <div className="flex items-center justify-between p-4">
-            <AnimatedTitle />
-            <SignedIn>
-              <UserButton afterSignOutUrl="/"/>
-            </SignedIn>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <Button variant="outline">Sign In to Save</Button>
-              </SignInButton>
-            </SignedOut>
-          </div>
-        )}
-        <Button
-          onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
-          size="sm"
-          variant="ghost"
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 h-4 w-8 p-0 bg-background border border-border rounded-full shadow-sm hover:shadow-md z-10"
-          aria-label={isHeaderCollapsed ? "Expand header" : "Collapse header"}
-        >
-          {isHeaderCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </Button>
-      </header>
+      {/* Floating open source link in top left corner */}
+      <a
+        href="https://github.com/m13v/to-do-app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed top-4 left-4 z-50 text-sm text-gray-400 hover:text-gray-600"
+      >
+        Open source
+      </a>
+
+      {/* Floating sign-in button in top right corner */}
+      <div className="fixed top-4 right-4 z-50">
+        <SignedIn>
+          <UserButton afterSignOutUrl="/"/>
+        </SignedIn>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <Button variant="outline" size="sm" className="animate-pulse-glow">Sign in to save</Button>
+          </SignInButton>
+        </SignedOut>
+      </div>
       
       {/* Error banners pinned at top - outside of scrollable main */}
       {authError && (
@@ -1268,12 +1086,6 @@ export default function Home() {
       )}
       
       <main className="flex-1 overflow-y-auto p-2 md:p-4">
-        <SignedOut>
-          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4" role="alert">
-            <p className="font-bold">Welcome!</p>
-            <p>Your tasks are being saved locally in your browser. <SignInButton mode="modal"><span className="underline cursor-pointer">Sign up for free</span></SignInButton> to save them to your account and access them from any device.</p>
-          </div>
-        </SignedOut>
         {isLoaded ? (
           <>
             {loading ? (
@@ -1321,38 +1133,6 @@ export default function Home() {
                   </div>
 
                   <TabsContent value="tasks" className="space-y-3">
-                
-                <div className="mb-3">
-                  <div className="flex items-center gap-2 text-sm mb-1">
-                    <Sparkles className="h-4 w-4 text-purple-600" />
-                    <span className="font-semibold">AI Assistant</span>
-                  </div>
-                  <form onSubmit={handleSubmit} className="flex gap-2 items-start">
-                    <Textarea
-                      placeholder="Ask the AI to modify your tasks..."
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      className="min-h-[60px] resize-y"
-                      rows={2}
-                      disabled={processingAI}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSubmit(e);
-                        }
-                      }}
-                    />
-                    <Button type="submit" disabled={processingAI || !prompt.trim()} size="sm">
-                      {processingAI ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </form>
-                </div>
-
-                <QuickPrompts onPromptSelect={setPrompt} />
 
                 <div className="mb-3 flex flex-col md:flex-row items-stretch md:items-center gap-2">
                   <div className="relative flex-1">
@@ -2111,55 +1891,6 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="border-t relative">
-        {!isFooterCollapsed && (
-          <div className="p-4 text-center text-sm text-gray-500">
-            Open source on{' '}
-            <a
-              href="https://github.com/m13v/to-do-app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-gray-900"
-            >
-              GitHub
-            </a>
-          </div>
-        )}
-        <Button
-          onClick={() => setIsFooterCollapsed(!isFooterCollapsed)}
-          size="sm"
-          variant="ghost"
-          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-8 p-0 bg-background border border-border rounded-full shadow-sm hover:shadow-md z-10"
-          aria-label={isFooterCollapsed ? "Expand footer" : "Collapse footer"}
-        >
-          {isFooterCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-      </footer>
-
-      <Dialog open={!!aiGeneratedContent} onOpenChange={(isOpen) => !isOpen && handleCancelAIChanges()}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Confirm AI Changes</DialogTitle>
-            <DialogDescription>
-              Review the changes below. The left side is the current version, and the right side is the AI-generated version.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-            <div>
-              <h3 className="font-bold mb-2">Current</h3>
-              <pre className="text-xs p-2 bg-gray-100 rounded">{tasksSentToAI ? tasksToMarkdown(tasksSentToAI) : ''}</pre>
-            </div>
-            <div>
-              <h3 className="font-bold mb-2">Proposed</h3>
-              <pre className="text-xs p-2 bg-gray-100 rounded">{aiGeneratedContent}</pre>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={handleCancelAIChanges}>Cancel</Button>
-            <Button onClick={handleConfirmAIChanges}>Confirm and Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
         <DialogContent className="max-w-2xl">
@@ -2197,24 +1928,6 @@ export default function Home() {
               setIsExportModalOpen(false);
             }}>Download</Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={processingAI}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>AI Assistant is thinking...</DialogTitle>
-            <DialogDescription>
-              Please wait while the AI processes your request.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center p-6">
-            <Loader2 className="h-16 w-16 animate-spin text-purple-600" />
-            <p className="mt-4 text-lg font-semibold">
-              Time remaining (might take less): {countdown} seconds
-            </p>
-            {countdown === 0 && <p className="text-sm text-gray-500 mt-2">The AI is taking longer than usual. Please be patient.</p>}
-          </div>
         </DialogContent>
       </Dialog>
     </div>
