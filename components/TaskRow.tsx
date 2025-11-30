@@ -25,12 +25,12 @@ const COLOR_BG_CLASSES: Record<TaskColor, string> = {
   blue: 'bg-blue-400',
 };
 
-// Row background colors
+// Row background colors (using ! prefix to override hover states)
 const ROW_BG_CLASSES: Record<TaskColor, string> = {
   white: '',
-  grey: 'bg-gray-100 dark:bg-gray-800',
-  red: 'bg-red-50 dark:bg-red-950',
-  blue: 'bg-blue-50 dark:bg-blue-950',
+  grey: '!bg-gray-200 dark:!bg-gray-700',
+  red: '!bg-red-100 dark:!bg-red-900',
+  blue: '!bg-blue-100 dark:!bg-blue-900',
 };
 
 interface TaskRowProps {
