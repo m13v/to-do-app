@@ -145,7 +145,7 @@ export default function Home() {
   const [mergeResult, setMergeResult] = useState<MergeResult | null>(null);
   // Tab state for switching between Tasks and Categories views
   const [activeTab, setActiveTab] = useState<string>('tasks');
-  // Column width state for resizable columns - synced across both Today's and main tables
+  // Column width state for resizable columns
   const [columnWidths, setColumnWidths] = useState({
     drag: 32,
     priority: 80,
@@ -775,8 +775,6 @@ export default function Home() {
   }, [sortField, sortDirection]);
 
   const filteredActiveTasks = useMemo(() => activeTasks.filter(task => {
-    // Exclude today tasks - they're shown in the dedicated Today section
-    if (task.today) return false;
     const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.task.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
@@ -1397,149 +1395,13 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* MARKER_START_REMOVE_TODAY_SECTION */}
-                {false && (
-                  <Card className="border-2 border-primary">
-                    <CardHeader className="py-2 bg-primary/10">
-                      <CardTitle className="text-sm">REMOVED</CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-2">
-                      <DragDropContext onDragEnd={() => {}}>
-                        {isDesktop ? (
-                          <div className="overflow-x-auto">
-                            <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('drag', e)}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.priority}px`, minWidth: `${columnWidths.priority}px` }} onClick={() => handleSort('priority')}>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger className="w-full h-full flex items-center justify-center">
-                                          {getSortIcon('priority')}
-                                        </TooltipTrigger>
-                                        <TooltipContent>Overall Priority</TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('priority', e)}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.category}px`, minWidth: `${columnWidths.category}px` }} onClick={() => handleSort('category')}>
-                                    <div className="flex items-center gap-1">
-                                      Category {getSortIcon('category')}
-                                    </div>
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('category', e)}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.subcategory}px`, minWidth: `${columnWidths.subcategory}px` }}>
-                                    <div className="flex items-center gap-1">
-                                      Subcategory
-                                    </div>
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('subcategory', e)}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.status}px`, minWidth: `${columnWidths.status}px` }}>
-                                    Status
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('status', e)}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.task}px`, minWidth: `${columnWidths.task}px` }} onClick={() => handleSort('task')}>
-                                    <div className="flex items-center gap-1">
-                                      Task {getSortIcon('task')}
-                                    </div>
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('task', e)}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.today}px`, minWidth: `${columnWidths.today}px` }}>
-                                    Today
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('today', e)}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">
-                                    Actions
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('actions', e)}
-                                    />
-                                  </TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <Droppable droppableId="today-tasks">
-                                {(provided) => (
-                                  <TableBody ref={provided.innerRef} {...provided.droppableProps}>
-                                    {todayTasks.map((task, idx) => (
-                                      <TaskRow
-                                        key={task.id}
-                                        task={task}
-                                        index={idx}
-                                        handleTaskUpdate={handleTaskUpdate}
-                                        handlePriorityChange={handlePriorityChange}
-                                        handleAddTask={() => handleAddTask(task.id)}
-                                        handleDeleteTask={() => handleDeleteTask(task.id)}
-                                        focusCell={focusCell}
-                                        columnWidths={columnWidths}
-                                        isTextWrapped={isTextWrapped}
-                                        onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
-                                        isEditing={task.id === editingTaskId}
-                                        onEditingComplete={handleEditingComplete}
-                                      />
-                                    ))}
-                                    {provided.placeholder}
-                                  </TableBody>
-                                )}
-                              </Droppable>
-                            </Table>
-                          </div>
-                        ) : (
-                          <Droppable droppableId="today-tasks-mobile">
-                            {(provided) => (
-                              <div ref={provided.innerRef} {...provided.droppableProps}>
-                                {todayTasks.map((task, index) => (
-                                  <MobileTaskCard
-                                    key={task.id}
-                                    task={task}
-                                    index={index}
-                                    onUpdate={handleTaskUpdate}
-                                    onDelete={handleDeleteTask}
-                                    onAdd={() => handleAddTask(task.id)}
-                                    onPriorityChange={handlePriorityChange}
-                                    isTextWrapped={isTextWrapped}
-                                    onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
-                                  />
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        )}
-                      </DragDropContext>
-                    </CardContent>
-                  </Card>
-                )}
-
                 <Card>
                   <CardContent className="py-2">
                     <DragDropContext onDragEnd={handleDragEnd}>
                       {isDesktop ? (
                         <div className="overflow-x-auto">
                           <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
-                            <TableHeader>
+                            <TableHeader className="sticky top-0 z-10 bg-background">
                               <TableRow>
                                 <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
                                   <div
@@ -1595,11 +1457,10 @@ export default function Home() {
                                     onMouseDown={(e) => handleResizeStart('task', e)}
                                   />
                                 </TableHead>
-                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.today}px`, minWidth: `${columnWidths.today}px` }}>
-                                  Today
+                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.color}px`, minWidth: `${columnWidths.color}px` }}>
                                   <div
                                     className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onMouseDown={(e) => handleResizeStart('today', e)}
+                                    onMouseDown={(e) => handleResizeStart('color', e)}
                                   />
                                 </TableHead>
                                 <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">
@@ -1676,7 +1537,7 @@ export default function Home() {
                         <CardContent className="py-2">
                           <div className="overflow-x-auto">
                             <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
-                              <TableHeader>
+                              <TableHeader className="sticky top-0 z-10 bg-background">
                                 <TableRow>
                                   <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
                                     <div
@@ -1732,11 +1593,10 @@ export default function Home() {
                                       onMouseDown={(e) => handleResizeStart('task', e)}
                                     />
                                   </TableHead>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.today}px`, minWidth: `${columnWidths.today}px` }}>
-                                    Today
+                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.color}px`, minWidth: `${columnWidths.color}px` }}>
                                     <div
                                       className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('today', e)}
+                                      onMouseDown={(e) => handleResizeStart('color', e)}
                                     />
                                   </TableHead>
                                   <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">
