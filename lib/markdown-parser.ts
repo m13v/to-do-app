@@ -127,9 +127,24 @@ export function parseMarkdownTable(markdown: string): Task[] {
       updated_at,
     };
   }).filter((task): task is Task => task !== null);
-  
-  console.log('[parseMarkdownTable] Parsed tasks count:', parsedTasks.length);
-  return parsedTasks;
+
+  // Deduplicate by ID - keep first occurrence (lowest priority)
+  const seenIds = new Set<string>();
+  const dedupedTasks = parsedTasks.filter(task => {
+    if (seenIds.has(task.id)) {
+      console.log('[parseMarkdownTable] Duplicate ID filtered:', task.id, task.task.substring(0, 30));
+      return false;
+    }
+    seenIds.add(task.id);
+    return true;
+  });
+
+  if (dedupedTasks.length < parsedTasks.length) {
+    console.log('[parseMarkdownTable] Removed', parsedTasks.length - dedupedTasks.length, 'duplicate tasks');
+  }
+
+  console.log('[parseMarkdownTable] Parsed tasks count:', dedupedTasks.length);
+  return dedupedTasks;
 }
 
 export function tasksToMarkdown(tasks: Task[]): string {
