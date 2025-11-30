@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Draggable, DraggableProvided } from '@hello-pangea/dnd';
-import { Task } from '@/lib/markdown-parser';
+import { Task, TaskColor, TASK_COLORS } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,30 +14,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import NumberStepper from './NumberStepper';
+
+// Color button background colors (what's shown when that color is active)
+const COLOR_BG_CLASSES: Record<TaskColor, string> = {
+  white: 'bg-white border border-gray-300',
+  grey: 'bg-gray-400',
+  red: 'bg-red-400',
+  blue: 'bg-blue-400',
+};
+
+// Row background colors
+const ROW_BG_CLASSES: Record<TaskColor, string> = {
+  white: '',
+  grey: 'bg-gray-100 dark:bg-gray-800',
+  red: 'bg-red-50 dark:bg-red-950',
+  blue: 'bg-blue-50 dark:bg-blue-950',
+};
 
 interface TaskRowProps {
   task: Task;
   index: number;
   isDraggable?: boolean;
-  handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'> | 'today', value: string | boolean) => void;
+  handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'>, value: string) => void;
   handlePriorityChange: (id: string, priority: number) => void;
   handleAddTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
   focusCell: (rowIndex: number, colIndex: number) => void;
-  isSelected?: boolean;
-  onToggleSelect?: (taskId: string) => void;
   columnWidths?: {
-    checkbox: number;
     drag: number;
     priority: number;
     category: number;
     subcategory: number;
     status: number;
     task: number;
-    today: number;
+    color: number;
     actions: number;
   };
   isTextWrapped?: boolean;
@@ -55,8 +67,6 @@ const TaskRow: React.FC<TaskRowProps> = ({
   handleAddTask,
   handleDeleteTask,
   focusCell,
-  isSelected = false,
-  onToggleSelect,
   columnWidths,
   isTextWrapped = true,
   onToggleTextWrap,
@@ -137,20 +147,20 @@ const TaskRow: React.FC<TaskRowProps> = ({
     // If they differ, user has unsaved changes - don't reset cursor position
     // This prevents input reset during active editing
     setEditedTask(prev => {
-      const hasLocalChanges = 
+      const hasLocalChanges =
         prev.task !== task.task ||
         prev.category !== task.category ||
         prev.subcategory !== task.subcategory ||
         prev.status !== task.status ||
-        prev.today !== task.today;
-      
+        prev.color !== task.color;
+
       // Only sync from props if no local changes exist
       return hasLocalChanges ? prev : task;
     });
   }, [task]);
 
   const debouncedUpdate = useDebouncedCallback(
-    (field: keyof Omit<Task, 'id' | 'priority'> | 'today', value: string | boolean) => {
+    (field: keyof Omit<Task, 'id' | 'priority'>, value: string) => {
       handleTaskUpdate(task.id, field, value);
       // Clear pending changes flag after update completes
       hasPendingChanges.current = false;
@@ -158,11 +168,26 @@ const TaskRow: React.FC<TaskRowProps> = ({
     300
   );
 
-  const handleChange = (field: keyof Omit<Task, 'id' | 'priority'>, value: string | boolean) => {
+  const handleChange = (field: keyof Omit<Task, 'id' | 'priority'>, value: string) => {
     // Mark that we have pending changes to prevent cursor position loss
     hasPendingChanges.current = true;
     setEditedTask(prev => ({ ...prev, [field]: value }));
     debouncedUpdate(field, value);
+  };
+
+  // Cycle to the next color
+  const handleColorCycle = () => {
+    const currentIndex = TASK_COLORS.indexOf(editedTask.color);
+    const nextIndex = (currentIndex + 1) % TASK_COLORS.length;
+    const nextColor = TASK_COLORS[nextIndex];
+    setEditedTask(prev => ({ ...prev, color: nextColor }));
+    handleTaskUpdate(task.id, 'color', nextColor);
+  };
+
+  // Get the next color to show on the button (what clicking will change to)
+  const getNextColor = (): TaskColor => {
+    const currentIndex = TASK_COLORS.indexOf(editedTask.color);
+    return TASK_COLORS[(currentIndex + 1) % TASK_COLORS.length];
   };
 
   const handleBlur = (field: keyof Omit<Task, 'id' | 'priority'>) => {
@@ -184,16 +209,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
       {...(provided?.draggableProps || {})}
           className={cn(
             "group",
+            ROW_BG_CLASSES[editedTask.color],
             task.status === 'done' && "text-muted-foreground line-through"
           )}
         >
-      <TableCell style={columnWidths ? { width: `${columnWidths.checkbox}px` } : undefined}>
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={() => onToggleSelect?.(task.id)}
-          aria-label={`Select task ${task.task}`}
-        />
-      </TableCell>
       <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab" style={columnWidths ? { width: `${columnWidths.drag}px` } : undefined}>
         {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
           </TableCell>
@@ -263,18 +282,17 @@ const TaskRow: React.FC<TaskRowProps> = ({
               data-task-id={task.id}
             />
           </TableCell>
-      <TableCell className="text-center" style={columnWidths ? { width: `${columnWidths.today}px` } : undefined}>
-            <Checkbox
+      <TableCell className="text-center" style={columnWidths ? { width: `${columnWidths.color}px` } : undefined}>
+            <button
               id={`cell-${index}-4`}
-              checked={!!editedTask.today}
-              onCheckedChange={checked => {
-                if (process.env.NODE_ENV === 'development') {
-                  console.log('Today checkbox changed:', checked, editedTask.id);
-                }
-                handleChange('today', !!checked);
-              }}
+              onClick={handleColorCycle}
               onFocus={() => focusCell(index, 4)}
-              aria-label="Mark as today"
+              className={cn(
+                "w-4 h-4 rounded-sm cursor-pointer transition-colors",
+                COLOR_BG_CLASSES[getNextColor()]
+              )}
+              title={`Click to change to ${getNextColor()}`}
+              aria-label={`Change color to ${getNextColor()}`}
             />
           </TableCell>
       <TableCell className="text-right" style={columnWidths ? { width: `${columnWidths.actions}px` } : undefined}>

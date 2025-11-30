@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, Undo, Redo, Check, ChevronsUpDown } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { parseMarkdownTable, tasksToMarkdown, Task } from '@/lib/markdown-parser';
@@ -33,15 +32,15 @@ import CategoriesManager from '@/components/CategoriesManager';
 type SortField = 'priority' | 'category' | 'task';
 type SortDirection = 'asc' | 'desc';
 
-const defaultTasksMarkdown = `| P | Category | Subcategory | Task | Status | Today | Created | Updated |
+const defaultTasksMarkdown = `| P | Category | Subcategory | Task | Status | Color | Created | Updated |
 |---|---|---|---|---|---|----------|----------|
-| 1 | Welcome | | Welcome to your new task manager! | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-| 2 | Welcome | | Click on any task text to edit it. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-| 3 | Welcome | | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-| 4 | Welcome | | Drag and drop tasks to reorder them. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-| 5 | Welcome | | Use the search bar to filter your tasks. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-| 6 | Welcome | | Click on the column headers to sort your list. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
-| 7 | Welcome | | Delete these welcome tasks when you're ready to start. | to_do | | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 1 | Welcome | | Welcome to your new task manager! | to_do | white | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 2 | Welcome | | Click on any task text to edit it. | to_do | white | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 3 | Welcome | | Use the buttons on the right to add, duplicate, or delete tasks. | to_do | white | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 4 | Welcome | | Drag and drop tasks to reorder them. | to_do | white | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 5 | Welcome | | Use the search bar to filter your tasks. | to_do | white | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 6 | Welcome | | Click on the column headers to sort your list. | to_do | white | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
+| 7 | Welcome | | Delete these welcome tasks when you're ready to start. | to_do | white | ${new Date().toISOString().split('T')[0]} | ${new Date().toISOString().split('T')[0]} |
 `;
 
 export default function Home() {
@@ -76,8 +75,6 @@ export default function Home() {
   const [exportableMarkdown, setExportableMarkdown] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  // Selected tasks state - track which tasks are selected via checkbox
-  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   // Text wrapping state - track if task text should wrap or show as single line
   const [isTextWrapped, setIsTextWrapped] = useState(true);
   // Track task being edited to defer sorting until blur
@@ -150,14 +147,13 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<string>('tasks');
   // Column width state for resizable columns - synced across both Today's and main tables
   const [columnWidths, setColumnWidths] = useState({
-    checkbox: 32,
     drag: 32,
     priority: 80,
     category: 128,
     subcategory: 128,
     status: 128,
     task: 300,
-    today: 64,
+    color: 48,
     actions: 80
   });
   const [isResizing, setIsResizing] = useState<string | null>(null);
@@ -165,7 +161,6 @@ export default function Home() {
   const resizeStartWidth = useRef<number>(0);
 
   // Calculate minimum table width by summing all column widths
-  // This ensures Today's table and main table have identical minimum widths and aligned columns
   const minTableWidth = useMemo(() => {
     return Object.values(columnWidths).reduce((sum, width) => sum + width, 0);
   }, [columnWidths]);
@@ -671,7 +666,7 @@ export default function Home() {
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
   };
 
-  const handleTaskUpdate = useCallback((id: string, field: keyof Omit<Task, 'id'> | 'today', value: string | boolean) => {
+  const handleTaskUpdate = useCallback((id: string, field: keyof Omit<Task, 'id' | 'priority'>, value: string) => {
     let taskToMove: Task | undefined;
     const updatedActive = [...activeTasks];
     const updatedDone = [...doneTasks];
@@ -737,7 +732,7 @@ export default function Home() {
       subcategory,
       task: '',
       status: 'to_do',
-      today: false,
+      color: 'white',
       created_at: now,
       updated_at: now
     };
@@ -862,9 +857,6 @@ export default function Home() {
     return sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   }, [sortField, sortDirection]);
 
-  // Filter for today tasks
-  const todayTasks = useMemo(() => activeTasks.filter(t => t.today), [activeTasks]);
-
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('[File Import] handleFileChange called');
     const file = event.target.files?.[0];
@@ -909,26 +901,6 @@ export default function Home() {
       fileInputRef.current.value = '';
     }
   };
-
-  const runDailyReset = useCallback(() => {
-    const lastVisitDate = localStorage.getItem('lastVisitDate');
-    const today = new Date().toISOString().split('T')[0];
-
-    if (lastVisitDate !== today) {
-      if (allTasks.length > 0 && allTasks.some(t => t.today)) {
-        console.log("New day detected. Resetting 'Today' tasks.");
-        const resetTasks = allTasks.map(task => ({ ...task, today: false }));
-        updateAndSaveTasks(resetTasks, false);
-      }
-      localStorage.setItem('lastVisitDate', today);
-    }
-  }, [allTasks, updateAndSaveTasks]);
-
-  useEffect(() => {
-    if (!loading) {
-      runDailyReset();
-    }
-  }, [loading, runDailyReset]);
 
   const focusCell = (row: number, col: number) => {
     const cellId = `cell-${row}-${col}`;
@@ -983,37 +955,6 @@ export default function Home() {
       };
     }
   }, [isResizing, handleResizeMove, handleResizeEnd]);
-
-  // Handle selecting/deselecting individual tasks
-  const handleToggleTaskSelection = useCallback((taskId: string) => {
-    setSelectedTaskIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(taskId)) {
-        newSet.delete(taskId);
-      } else {
-        newSet.add(taskId);
-      }
-      return newSet;
-    });
-  }, []);
-
-  // Handle selecting/deselecting all tasks in current view
-  const handleToggleSelectAll = useCallback((tasksList: Task[]) => {
-    const allIds = tasksList.map(t => t.id);
-    const allSelected = allIds.every(id => selectedTaskIds.has(id));
-    
-    setSelectedTaskIds(prev => {
-      const newSet = new Set(prev);
-      if (allSelected) {
-        // Deselect all from this list
-        allIds.forEach(id => newSet.delete(id));
-      } else {
-        // Select all from this list
-        allIds.forEach(id => newSet.add(id));
-      }
-      return newSet;
-    });
-  }, [selectedTaskIds]);
 
   // Handle category merging
   const handleMergeCategories = useCallback((categoriesToMerge: string[], targetCategory: string) => {
@@ -1456,11 +1397,11 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Today Tasks Section */}
-                {todayTasks.length > 0 && (
+                {/* MARKER_START_REMOVE_TODAY_SECTION */}
+                {false && (
                   <Card className="border-2 border-primary">
                     <CardHeader className="py-2 bg-primary/10">
-                      <CardTitle className="text-sm">Today&apos;s Tasks ({todayTasks.length})</CardTitle>
+                      <CardTitle className="text-sm">REMOVED</CardTitle>
                     </CardHeader>
                     <CardContent className="py-2">
                       <DragDropContext onDragEnd={() => {}}>
@@ -1469,17 +1410,6 @@ export default function Home() {
                             <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.checkbox}px`, minWidth: `${columnWidths.checkbox}px` }}>
-                                    <Checkbox
-                                      checked={todayTasks.length > 0 && todayTasks.every(t => selectedTaskIds.has(t.id))}
-                                      onCheckedChange={() => handleToggleSelectAll(todayTasks)}
-                                      aria-label="Select all today tasks"
-                                    />
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('checkbox', e)}
-                                    />
-                                  </TableHead>
                                   <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
                                     <div
                                       className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1563,8 +1493,6 @@ export default function Home() {
                                         handleAddTask={() => handleAddTask(task.id)}
                                         handleDeleteTask={() => handleDeleteTask(task.id)}
                                         focusCell={focusCell}
-                                        isSelected={selectedTaskIds.has(task.id)}
-                                        onToggleSelect={handleToggleTaskSelection}
                                         columnWidths={columnWidths}
                                         isTextWrapped={isTextWrapped}
                                         onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
@@ -1613,17 +1541,6 @@ export default function Home() {
                           <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.checkbox}px`, minWidth: `${columnWidths.checkbox}px` }}>
-                                  <Checkbox
-                                    checked={paginatedTasks.length > 0 && paginatedTasks.every(t => selectedTaskIds.has(t.id))}
-                                    onCheckedChange={() => handleToggleSelectAll(paginatedTasks)}
-                                    aria-label="Select all tasks"
-                                  />
-                                  <div
-                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onMouseDown={(e) => handleResizeStart('checkbox', e)}
-                                  />
-                                </TableHead>
                                 <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
                                   <div
                                     className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1707,8 +1624,6 @@ export default function Home() {
                                       handleAddTask={() => handleAddTask(task.id)}
                                       handleDeleteTask={() => handleDeleteTask(task.id)}
                                       focusCell={focusCell}
-                                      isSelected={selectedTaskIds.has(task.id)}
-                                      onToggleSelect={handleToggleTaskSelection}
                                       columnWidths={columnWidths}
                                       isTextWrapped={isTextWrapped}
                                       onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
@@ -1763,17 +1678,6 @@ export default function Home() {
                             <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.checkbox}px`, minWidth: `${columnWidths.checkbox}px` }}>
-                                    <Checkbox
-                                      checked={doneTasks.length > 0 && doneTasks.every(t => selectedTaskIds.has(t.id))}
-                                      onCheckedChange={() => handleToggleSelectAll(doneTasks)}
-                                      aria-label="Select all archived tasks"
-                                    />
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('checkbox', e)}
-                                    />
-                                  </TableHead>
                                   <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
                                     <div
                                       className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1856,8 +1760,6 @@ export default function Home() {
                                     handleAddTask={() => handleAddTask(task.id)}
                                     handleDeleteTask={() => handleDeleteTask(task.id)}
                                     focusCell={() => {}}
-                                    isSelected={selectedTaskIds.has(task.id)}
-                                    onToggleSelect={handleToggleTaskSelection}
                                     columnWidths={columnWidths}
                                     isTextWrapped={isTextWrapped}
                                     onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
