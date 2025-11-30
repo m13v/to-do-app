@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Task } from '@/lib/markdown-parser';
+import { Task, TaskColor, TASK_COLORS } from '@/lib/markdown-parser';
 import { Button } from '@/components/ui/button';
 import { Plus, X, ChevronDown, ChevronUp, WrapText } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,10 +11,26 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Draggable, DraggableProvided } from '@hello-pangea/dnd';
 
+// Color button background colors
+const COLOR_BG_CLASSES: Record<TaskColor, string> = {
+  white: 'bg-white border border-gray-300',
+  grey: 'bg-gray-400',
+  red: 'bg-red-400',
+  blue: 'bg-blue-400',
+};
+
+// Card background colors
+const CARD_BG_CLASSES: Record<TaskColor, string> = {
+  white: '',
+  grey: 'bg-gray-100 dark:bg-gray-800',
+  red: 'bg-red-50 dark:bg-red-950',
+  blue: 'bg-blue-50 dark:bg-blue-950',
+};
+
 interface MobileTaskCardProps {
   task: Task;
   index: number;
-  onUpdate: (id: string, field: keyof Omit<Task, 'id'> | 'today', value: string | boolean) => void;
+  onUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'>, value: string) => void;
   onDelete: (id: string) => void;
   onAdd: (id: string) => void;
   onPriorityChange: (id: string, newPriority: number) => void;
@@ -117,9 +133,24 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
     };
   }, [savePendingChanges]);
 
+  // Cycle to the next color
+  const handleColorCycle = () => {
+    const currentIndex = TASK_COLORS.indexOf(editedTask.color);
+    const nextIndex = (currentIndex + 1) % TASK_COLORS.length;
+    const nextColor = TASK_COLORS[nextIndex];
+    setEditedTask(prev => ({ ...prev, color: nextColor }));
+    onUpdate(task.id, 'color', nextColor);
+  };
+
+  // Get the next color to show on the button
+  const getNextColor = (): TaskColor => {
+    const currentIndex = TASK_COLORS.indexOf(editedTask.color);
+    return TASK_COLORS[(currentIndex + 1) % TASK_COLORS.length];
+  };
+
   const cardContent = (provided?: DraggableProvided) => (
-    <Card 
-      className={cn("mb-0.5 rounded-md", task.status === 'done' && 'bg-muted')}
+    <Card
+      className={cn("mb-0.5 rounded-md", CARD_BG_CLASSES[editedTask.color], task.status === 'done' && 'bg-muted')}
       ref={provided?.innerRef}
       {...(provided?.draggableProps || {})}
     >
@@ -245,7 +276,16 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
             />
           </div>
           
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={handleColorCycle}
+              className={cn(
+                "w-4 h-4 rounded-sm cursor-pointer transition-colors",
+                COLOR_BG_CLASSES[getNextColor()]
+              )}
+              title={`Click to change to ${getNextColor()}`}
+              aria-label={`Change color to ${getNextColor()}`}
+            />
             <Button
               onClick={() => setIsCollapsed(!isCollapsed)}
               size="sm"

@@ -1,3 +1,7 @@
+export type TaskColor = 'white' | 'grey' | 'red' | 'blue';
+
+export const TASK_COLORS: TaskColor[] = ['white', 'grey', 'red', 'blue'];
+
 export interface Task {
   id: string;
   priority: number;
@@ -5,7 +9,7 @@ export interface Task {
   subcategory: string;
   task: string;
   status: string;
-  today: boolean;
+  color: TaskColor;
   created_at: string; // ISO 8601 timestamp
   updated_at: string; // ISO 8601 timestamp - when task was last modified
 }
@@ -51,6 +55,8 @@ export function parseMarkdownTable(markdown: string): Task[] {
   const subcategoryIndex = headers.indexOf('subcategory');
   const taskIndex = headers.indexOf('task');
   const statusIndex = headers.indexOf('status');
+  const colorIndex = headers.indexOf('color');
+  // Legacy support: check for 'today' column in old data
   const todayIndex = headers.indexOf('today');
   const createdIndex = headers.indexOf('created');
   const updatedIndex = headers.indexOf('updated');
@@ -97,6 +103,18 @@ export function parseMarkdownTable(markdown: string): Task[] {
     // Generate stable ID based on created_at and content
     const id = generateStableId(created_at, taskText, category);
     
+    // Parse color: check new 'color' column first, then migrate from legacy 'today' column
+    let color: TaskColor = 'white';
+    if (colorIndex !== -1) {
+      const colorValue = getValue(colorIndex).toLowerCase() as TaskColor;
+      if (TASK_COLORS.includes(colorValue)) {
+        color = colorValue;
+      }
+    } else if (todayIndex !== -1 && getValue(todayIndex).toLowerCase() === 'yes') {
+      // Migrate legacy 'today' tasks to red color
+      color = 'red';
+    }
+
     return {
       id,
       priority,
@@ -104,7 +122,7 @@ export function parseMarkdownTable(markdown: string): Task[] {
       subcategory: getValue(subcategoryIndex),
       task: taskText,
       status: getValue(statusIndex),
-      today: todayIndex !== -1 ? getValue(todayIndex).toLowerCase() === 'yes' : false,
+      color,
       created_at,
       updated_at,
     };
@@ -115,9 +133,9 @@ export function parseMarkdownTable(markdown: string): Task[] {
 }
 
 export function tasksToMarkdown(tasks: Task[]): string {
-  let markdown = '| P | Category | Subcategory | Task | Status | Today | Created | Updated |\n';
+  let markdown = '| P | Category | Subcategory | Task | Status | Color | Created | Updated |\n';
   markdown += '|---|----------|-------------|------|--------|-------|---------|----------|\n';
-  
+
   // Sort tasks by priority before converting to markdown
   const sortedTasks = [...tasks].sort((a, b) => a.priority - b.priority);
 
@@ -140,9 +158,9 @@ export function tasksToMarkdown(tasks: Task[]): string {
         updatedDate = parsedDate.toISOString().split('T')[0];
       }
     }
-    markdown += `| ${task.priority} | ${task.category} | ${task.subcategory} | ${taskWithBreaks} | ${task.status} | ${task.today ? 'yes' : ''} | ${createdDate} | ${updatedDate} |\n`;
+    markdown += `| ${task.priority} | ${task.category} | ${task.subcategory} | ${taskWithBreaks} | ${task.status} | ${task.color} | ${createdDate} | ${updatedDate} |\n`;
   }
-  
+
   return markdown;
 }
 

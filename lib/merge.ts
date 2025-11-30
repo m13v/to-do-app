@@ -284,7 +284,7 @@ function mergeTask(
     subcategory: mergeSingleField('subcategory', base.subcategory, local.subcategory, server.subcategory, localTime, serverTime, conflicts, base),
     task: mergeSingleField('task', base.task, local.task, server.task, localTime, serverTime, conflicts, base),
     status: mergeSingleField('status', base.status, local.status, server.status, localTime, serverTime, conflicts, base),
-    today: mergeSingleField('today', base.today, local.today, server.today, localTime, serverTime, conflicts, base),
+    color: mergeSingleField('color', base.color, local.color, server.color, localTime, serverTime, conflicts, base),
     updated_at: mergeSingleField('updated_at', base.updated_at, local.updated_at, server.updated_at, localTime, serverTime, conflicts, base),
   };
   
@@ -343,7 +343,7 @@ function hasTaskChanged(oldTask: Task, newTask: Task): boolean {
     oldTask.subcategory !== newTask.subcategory ||
     oldTask.task !== newTask.task ||
     oldTask.status !== newTask.status ||
-    oldTask.today !== newTask.today
+    oldTask.color !== newTask.color
   );
 }
 
@@ -365,8 +365,8 @@ function getChangeDetails(oldTask: Task, newTask: Task): string {
   if (oldTask.priority !== newTask.priority) {
     changes.push(`priority: ${oldTask.priority} → ${newTask.priority}`);
   }
-  if (oldTask.today !== newTask.today) {
-    changes.push(`today: ${oldTask.today ? 'yes' : 'no'} → ${newTask.today ? 'yes' : 'no'}`);
+  if (oldTask.color !== newTask.color) {
+    changes.push(`color: ${oldTask.color} → ${newTask.color}`);
   }
   
   return changes.join(', ');
