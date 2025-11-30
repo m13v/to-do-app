@@ -42,6 +42,8 @@ interface TaskRowProps {
   };
   isTextWrapped?: boolean;
   onToggleTextWrap?: () => void;
+  isEditing?: boolean;
+  onEditingComplete?: () => void;
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({
@@ -58,6 +60,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
   columnWidths,
   isTextWrapped = true,
   onToggleTextWrap,
+  isEditing = false,
+  onEditingComplete,
 }) => {
   const [editedTask, setEditedTask] = useState(task);
   // Track if user is actively editing to prevent cursor position loss during re-renders
@@ -168,6 +172,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
     }
     // Clear pending changes flag after blur to allow syncing from props again
     hasPendingChanges.current = false;
+    // If this task was being edited (newly created), signal completion to apply sorting
+    if (isEditing && onEditingComplete) {
+      onEditingComplete();
+    }
   };
 
   const rowContent = (provided?: DraggableProvided) => (

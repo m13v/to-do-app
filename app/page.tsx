@@ -11,7 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Sparkles, Send, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight, ChevronUp, Undo, Redo, Check, ChevronsUpDown } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
-import { parseMarkdownTable, tasksToMarkdown, insertTaskAt, Task } from '@/lib/markdown-parser';
+import { parseMarkdownTable, tasksToMarkdown, Task } from '@/lib/markdown-parser';
 import TaskRow from '@/components/TaskRow';
 import QuickPrompts from '@/components/QuickPrompts';
 import {
@@ -108,7 +108,10 @@ export default function Home() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   // Text wrapping state - track if task text should wrap or show as single line
   const [isTextWrapped, setIsTextWrapped] = useState(true);
-  
+  // Track task being edited to defer sorting until blur
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingInsertIndex, setEditingInsertIndex] = useState<number | null>(null);
+
   // Load header collapse state from localStorage after hydration
   useEffect(() => {
     const stored = localStorage.getItem('isHeaderCollapsed');
@@ -906,20 +909,26 @@ export default function Home() {
     const subcategory = newTasks[afterIndex]?.subcategory || '';
     const newPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0) + 1;
     const now = new Date().toISOString();
-    const newTask: Task = { 
-      id: `${Date.now()}-${Math.random()}`, 
-      priority: newPriority, 
-      category, 
-      subcategory, 
-      task: '', 
-      status: 'to_do', 
-      today: false, 
+    const newTask: Task = {
+      id: `${Date.now()}-${Math.random()}`,
+      priority: newPriority,
+      category,
+      subcategory,
+      task: '',
+      status: 'to_do',
+      today: false,
       created_at: now,
       updated_at: now
     };
-    const updatedTasks = insertTaskAt(newTasks, afterIndex + 1, newTask);
-    updateAndSaveTasks([...updatedTasks, ...doneTasks]);
-    
+    // Insert task at position without reassigning priorities
+    const insertIndex = afterIndex + 1;
+    newTasks.splice(insertIndex, 0, newTask);
+    updateAndSaveTasks([...newTasks, ...doneTasks]);
+
+    // Track this task as being edited to defer sorting until blur
+    setEditingTaskId(newTask.id);
+    setEditingInsertIndex(insertIndex);
+
     // Focus the new task field after render (works for both desktop and mobile)
     setTimeout(() => {
       const newTaskField = document.querySelector(`textarea[data-task-id="${newTask.id}"]`) as HTMLTextAreaElement;
@@ -934,6 +943,11 @@ export default function Home() {
     const updatedDone = doneTasks.filter(t => t.id !== id);
     updateAndSaveTasks([...updatedActive, ...updatedDone]);
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
+
+  const handleEditingComplete = useCallback(() => {
+    setEditingTaskId(null);
+    setEditingInsertIndex(null);
+  }, []);
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
@@ -955,7 +969,36 @@ export default function Home() {
 
   const sortedActiveTasks = useMemo(() => {
     const sortableTasks = [...filteredActiveTasks];
-    
+
+    // If a task is being edited, pin it at its insert position
+    if (editingTaskId && editingInsertIndex !== null) {
+      const editingTask = sortableTasks.find(t => t.id === editingTaskId);
+      if (editingTask) {
+        const others = sortableTasks.filter(t => t.id !== editingTaskId);
+        // Sort others normally
+        others.sort((a, b) => {
+          let comparison = 0;
+          switch (sortField) {
+            case 'priority':
+              comparison = a.priority - b.priority;
+              break;
+            case 'category':
+              comparison = a.category.localeCompare(b.category);
+              break;
+            case 'task':
+              comparison = a.task.localeCompare(b.task);
+              break;
+          }
+          return sortDirection === 'asc' ? comparison : -comparison;
+        });
+        // Insert editing task at its visual position
+        const clampedIndex = Math.min(editingInsertIndex, others.length);
+        others.splice(clampedIndex, 0, editingTask);
+        return others;
+      }
+    }
+
+    // Normal sort
     sortableTasks.sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
@@ -973,7 +1016,7 @@ export default function Home() {
     });
 
     return sortableTasks;
-  }, [filteredActiveTasks, sortField, sortDirection]);
+  }, [filteredActiveTasks, sortField, sortDirection, editingTaskId, editingInsertIndex]);
 
   // Reset to page 1 when filter/search/sort changes
   useEffect(() => {
@@ -1745,6 +1788,8 @@ export default function Home() {
                                         columnWidths={columnWidths}
                                         isTextWrapped={isTextWrapped}
                                         onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
+                                        isEditing={task.id === editingTaskId}
+                                        onEditingComplete={handleEditingComplete}
                                       />
                                     ))}
                                     {provided.placeholder}
@@ -1887,6 +1932,8 @@ export default function Home() {
                                       columnWidths={columnWidths}
                                       isTextWrapped={isTextWrapped}
                                       onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
+                                      isEditing={task.id === editingTaskId}
+                                      onEditingComplete={handleEditingComplete}
                                     />
                                   ))}
                                   {provided.placeholder}
@@ -2033,6 +2080,8 @@ export default function Home() {
                                     columnWidths={columnWidths}
                                     isTextWrapped={isTextWrapped}
                                     onToggleTextWrap={() => setIsTextWrapped(!isTextWrapped)}
+                                    isEditing={task.id === editingTaskId}
+                                    onEditingComplete={handleEditingComplete}
                                   />
                                 ))}
                               </TableBody>
