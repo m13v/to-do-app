@@ -780,6 +780,8 @@ export default function Home() {
   }, [sortField, sortDirection]);
 
   const filteredActiveTasks = useMemo(() => activeTasks.filter(task => {
+    // Exclude today tasks - they're shown in the dedicated Today section
+    if (task.today) return false;
     const matchesSearch = task.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.task.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
@@ -1848,6 +1850,7 @@ export default function Home() {
                                     key={task.id}
                                     task={task}
                                     index={index}
+                                    isDraggable={false}
                                     handleTaskUpdate={handleTaskUpdate}
                                     handlePriorityChange={handlePriorityChange}
                                     handleAddTask={() => handleAddTask(task.id)}
