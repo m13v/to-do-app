@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { GripVertical, Plus, X, WrapText } from 'lucide-react';
+import { GripVertical, Plus, X, WrapText, ArrowDownToLine } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
   Select,
@@ -39,6 +39,7 @@ interface TaskRowProps {
   isDraggable?: boolean;
   handleTaskUpdate: (id: string, field: keyof Omit<Task, 'id' | 'priority'>, value: string) => void;
   handlePriorityChange: (id: string, priority: number) => void;
+  handleMoveToEnd?: () => void;
   handleAddTask: (id: string) => void;
   handleDeleteTask: (id: string) => void;
   focusCell: (rowIndex: number, colIndex: number) => void;
@@ -63,6 +64,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   isDraggable = true,
   handleTaskUpdate,
   handlePriorityChange,
+  handleMoveToEnd,
   handleAddTask,
   handleDeleteTask,
   focusCell,
@@ -216,19 +218,30 @@ const TaskRow: React.FC<TaskRowProps> = ({
         {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
           </TableCell>
       <TableCell style={columnWidths ? { width: `${columnWidths.priority}px` } : undefined}>
-        <NumberStepper
-          value={editedTask.priority}
-          onChange={(newVal) => {
-            setEditedTask(prev => ({ ...prev, priority: newVal }));
-            // Immediately call handlePriorityChange when buttons are clicked or value changes
-            handlePriorityChange(task.id, newVal);
-          }}
-          onBlur={() => {
-            if (editedTask.priority !== task.priority) {
-              handlePriorityChange(task.id, editedTask.priority);
-            }
-          }}
-        />
+        <div className="flex items-center gap-0.5">
+          <NumberStepper
+            value={editedTask.priority}
+            onChange={(newVal) => {
+              setEditedTask(prev => ({ ...prev, priority: newVal }));
+              // Immediately call handlePriorityChange when buttons are clicked or value changes
+              handlePriorityChange(task.id, newVal);
+            }}
+            onBlur={() => {
+              if (editedTask.priority !== task.priority) {
+                handlePriorityChange(task.id, editedTask.priority);
+              }
+            }}
+          />
+          <Button
+            onClick={handleMoveToEnd}
+            size="sm"
+            variant="ghost"
+            className="h-5 w-5 p-0"
+            title="Move to end of priority"
+          >
+            <ArrowDownToLine className="h-3 w-3" />
+          </Button>
+        </div>
           </TableCell>
       <TableCell className="font-medium" style={columnWidths ? { width: `${columnWidths.category}px` } : undefined}>
             <Input

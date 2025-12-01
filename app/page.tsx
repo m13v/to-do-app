@@ -779,7 +779,7 @@ export default function Home() {
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
   
   const handlePriorityChange = (taskId: string, newPriority: number) => {
-    const updatedTasks = allTasks.map(task => 
+    const updatedTasks = allTasks.map(task =>
       task.id === taskId ? { ...task, priority: newPriority } : task
     );
 
@@ -789,8 +789,13 @@ export default function Home() {
         return sortDirection === 'asc' ? comparison : -comparison;
       });
     }
-    
+
     updateAndSaveTasks(updatedTasks);
+  };
+
+  const handleMoveToEnd = (taskId: string) => {
+    const maxPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0);
+    handlePriorityChange(taskId, maxPriority + 1);
   };
 
   const handleAddTask = useCallback((afterId: string) => {
@@ -1616,6 +1621,7 @@ export default function Home() {
                                       index={index}
                                       handleTaskUpdate={handleTaskUpdate}
                                       handlePriorityChange={handlePriorityChange}
+                                      handleMoveToEnd={() => handleMoveToEnd(task.id)}
                                       handleAddTask={() => handleAddTask(task.id)}
                                       handleDeleteTask={() => handleDeleteTask(task.id)}
                                       focusCell={focusCell}
@@ -1745,6 +1751,7 @@ export default function Home() {
                                     isDraggable={false}
                                     handleTaskUpdate={handleTaskUpdate}
                                     handlePriorityChange={handlePriorityChange}
+                                    handleMoveToEnd={() => handleMoveToEnd(task.id)}
                                     handleAddTask={() => handleAddTask(task.id)}
                                     handleDeleteTask={() => handleDeleteTask(task.id)}
                                     focusCell={() => {}}
