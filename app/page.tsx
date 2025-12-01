@@ -186,8 +186,7 @@ export default function Home() {
     subcategory: 128,
     status: 128,
     task: 300,
-    color: 48,
-    actions: 80
+    actions: 100
   });
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const resizeStartX = useRef<number>(0);
@@ -1598,12 +1597,6 @@ export default function Home() {
                                     onMouseDown={(e) => handleResizeStart('task', e)}
                                   />
                                 </TableHead>
-                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.color}px`, minWidth: `${columnWidths.color}px` }}>
-                                  <div
-                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onMouseDown={(e) => handleResizeStart('color', e)}
-                                  />
-                                </TableHead>
                                 <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">
                                   Actions
                                   <div
@@ -1732,12 +1725,6 @@ export default function Home() {
                                     <div
                                       className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                       onMouseDown={(e) => handleResizeStart('task', e)}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.color}px`, minWidth: `${columnWidths.color}px` }}>
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('color', e)}
                                     />
                                   </TableHead>
                                   <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">

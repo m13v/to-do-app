@@ -49,7 +49,6 @@ interface TaskRowProps {
     subcategory: number;
     status: number;
     task: number;
-    color: number;
     actions: number;
   };
   isTextWrapped?: boolean;
@@ -282,21 +281,19 @@ const TaskRow: React.FC<TaskRowProps> = ({
               data-task-id={task.id}
             />
           </TableCell>
-      <TableCell className="text-center" style={columnWidths ? { width: `${columnWidths.color}px` } : undefined}>
-            <button
-              id={`cell-${index}-4`}
-              onClick={handleColorCycle}
-              onFocus={() => focusCell(index, 4)}
-              className={cn(
-                "w-4 h-4 rounded-sm cursor-pointer transition-colors",
-                COLOR_BG_CLASSES[getNextColor()]
-              )}
-              title={`Click to change to ${getNextColor()}`}
-              aria-label={`Change color to ${getNextColor()}`}
-            />
-          </TableCell>
       <TableCell className="text-right" style={columnWidths ? { width: `${columnWidths.actions}px` } : undefined}>
         <div className="flex items-center justify-end gap-0">
+              <button
+                id={`cell-${index}-4`}
+                onClick={handleColorCycle}
+                onFocus={() => focusCell(index, 4)}
+                className={cn(
+                  "w-4 h-4 rounded-sm cursor-pointer transition-colors mr-1",
+                  COLOR_BG_CLASSES[getNextColor()]
+                )}
+                title={`Click to change to ${getNextColor()}`}
+                aria-label={`Change color to ${getNextColor()}`}
+              />
               <Button
                 onClick={() => onToggleTextWrap?.()}
                 size="sm"
