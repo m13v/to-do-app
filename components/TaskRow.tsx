@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { GripVertical, Plus, X, WrapText, ArrowDownToLine } from 'lucide-react';
+import { Plus, X, WrapText, ArrowDownToLine } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
   Select,
@@ -44,7 +44,6 @@ interface TaskRowProps {
   handleDeleteTask: (id: string) => void;
   focusCell: (rowIndex: number, colIndex: number) => void;
   columnWidths?: {
-    drag: number;
     priority: number;
     category: number;
     subcategory: number;
@@ -214,10 +213,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
             task.status === 'done' && "text-muted-foreground line-through"
           )}
         >
-      <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab" style={columnWidths ? { width: `${columnWidths.drag}px` } : undefined}>
-        {isDraggable ? <GripVertical className="h-4 w-4" /> : <div className="w-4" />}
-          </TableCell>
-      <TableCell style={columnWidths ? { width: `${columnWidths.priority}px` } : undefined}>
+      <TableCell {...(provided?.dragHandleProps || {})} className="cursor-grab" style={columnWidths ? { width: `${columnWidths.priority}px` } : undefined}>
         <div className="flex items-center gap-0.5">
           <NumberStepper
             value={editedTask.priority}

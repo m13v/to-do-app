@@ -128,8 +128,11 @@ export default function Home() {
     if (storedWidths) {
       try {
         const parsed = JSON.parse(storedWidths);
-        setColumnWidths(parsed);
-        console.log('Column widths loaded from localStorage:', parsed);
+        // Remove legacy drag column from stored widths
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { drag: _, ...rest } = parsed;
+        console.log('Column widths loading:', rest);
+        setColumnWidths(prev => ({ ...prev, ...rest }));
       } catch (error) {
         console.error('Failed to parse stored column widths:', error);
       }
@@ -180,7 +183,6 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<string>('tasks');
   // Column width state for resizable columns
   const [columnWidths, setColumnWidths] = useState({
-    drag: 32,
     priority: 80,
     category: 128,
     subcategory: 128,
@@ -1548,12 +1550,6 @@ export default function Home() {
                           <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
                             <TableHeader className="sticky z-10 bg-background" style={{ top: `${stickyHeaderHeight}px` }}>
                               <TableRow>
-                                <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
-                                  <div
-                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onMouseDown={(e) => handleResizeStart('drag', e)}
-                                  />
-                                </TableHead>
                                 <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.priority}px`, minWidth: `${columnWidths.priority}px` }} onClick={() => handleSort('priority')}>
                                    <TooltipProvider>
                                     <Tooltip>
@@ -1679,12 +1675,6 @@ export default function Home() {
                             <Table className="w-full" style={{ minWidth: `${minTableWidth}px`, tableLayout: 'fixed' }}>
                               <TableHeader className="sticky z-10 bg-background" style={{ top: `${stickyHeaderHeight}px` }}>
                                 <TableRow>
-                                  <TableHead className="px-0.5 relative group" style={{ width: `${columnWidths.drag}px`, minWidth: `${columnWidths.drag}px` }}>
-                                    <div
-                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onMouseDown={(e) => handleResizeStart('drag', e)}
-                                    />
-                                  </TableHead>
                                   <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.priority}px`, minWidth: `${columnWidths.priority}px` }} onClick={() => handleSort('priority')}>
                                     <TooltipProvider>
                                       <Tooltip>
