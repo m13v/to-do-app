@@ -764,10 +764,11 @@ export default function Home() {
     }
     
     // Update only the dragged task with its new priority
-    const updatedTasks = activeTasks.map(task => 
-      task.id === movedItem.id ? { ...task, priority: newPriority } : task
+    const now = new Date().toISOString();
+    const updatedTasks = activeTasks.map(task =>
+      task.id === movedItem.id ? { ...task, priority: newPriority, updated_at: now } : task
     );
-  
+
     updateAndSaveTasks([...updatedTasks, ...doneTasks]);
   };
 
@@ -809,8 +810,9 @@ export default function Home() {
   }, [activeTasks, doneTasks, updateAndSaveTasks]);
   
   const handlePriorityChange = (taskId: string, newPriority: number) => {
+    const now = new Date().toISOString();
     const updatedTasks = allTasks.map(task =>
-      task.id === taskId ? { ...task, priority: newPriority } : task
+      task.id === taskId ? { ...task, priority: newPriority, updated_at: now } : task
     );
 
     if (sortField === 'priority') {
@@ -1075,11 +1077,12 @@ export default function Home() {
   // Handle category merging
   const handleMergeCategories = useCallback((categoriesToMerge: string[], targetCategory: string) => {
     console.log(`[Category Merge] Merging categories ${categoriesToMerge.join(', ')} into '${targetCategory}'`);
-    
+
     // Update all tasks that have one of the categories to merge
+    const now = new Date().toISOString();
     const updatedTasks = allTasks.map(task => {
       if (categoriesToMerge.includes(task.category)) {
-        return { ...task, category: targetCategory };
+        return { ...task, category: targetCategory, updated_at: now };
       }
       return task;
     });
