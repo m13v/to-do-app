@@ -468,8 +468,32 @@ export default function Home() {
   }, [isLoaded, isSignedIn, loadTasks]);
 
   // Reset task colors at midnight (user's local time)
-  // Uses a ref to track if we've already reset today to avoid infinite loops
+  // Runs on load AND sets a timer to trigger at midnight if app stays open
   const colorResetChecked = useRef(false);
+  const activeTasksRef = useRef(activeTasks);
+  const doneTasksRef = useRef(doneTasks);
+  activeTasksRef.current = activeTasks;
+  doneTasksRef.current = doneTasks;
+
+  const resetColors = useCallback((active: Task[], done: Task[]) => {
+    const today = new Date().toDateString();
+    localStorage.setItem('lastColorResetDate', today);
+    colorResetChecked.current = true;
+
+    const hasColored = active.some(t => t.color !== 'white') ||
+                       done.some(t => t.color !== 'white');
+    if (!hasColored) return;
+
+    const resetActive = active.map(t => ({ ...t, color: 'white' as TaskColor }));
+    const resetDone = done.map(t => ({ ...t, color: 'white' as TaskColor }));
+
+    setActiveTasks(resetActive);
+    setDoneTasks(resetDone);
+    saveTasks([...resetActive, ...resetDone]);
+    toast.success('Task colors reset for new day');
+  }, [saveTasks]);
+
+  // Check on load if we need to reset
   useEffect(() => {
     if (activeTasks.length === 0 || colorResetChecked.current) return;
 
@@ -477,32 +501,35 @@ export default function Home() {
     const lastResetDate = localStorage.getItem('lastColorResetDate');
 
     if (lastResetDate !== today) {
-      colorResetChecked.current = true; // Mark as checked to prevent re-runs
-
-      // Check if any tasks have non-white colors
-      const hasColoredTasks = activeTasks.some(t => t.color !== 'white') ||
-                              doneTasks.some(t => t.color !== 'white');
-
-      if (hasColoredTasks) {
-        console.log('[Color Reset] New day detected, resetting all task colors to white');
-        const resetActiveTasks = activeTasks.map(t => ({ ...t, color: 'white' as TaskColor }));
-        const resetDoneTasks = doneTasks.map(t => ({ ...t, color: 'white' as TaskColor }));
-
-        setActiveTasks(resetActiveTasks);
-        setDoneTasks(resetDoneTasks);
-
-        // Save the reset tasks
-        const allResetTasks = [...resetActiveTasks, ...resetDoneTasks];
-        saveTasks(allResetTasks);
-
-        toast.success('Task colors reset for new day');
-      }
-
-      localStorage.setItem('lastColorResetDate', today);
+      console.log('[Color Reset] New day detected, resetting all task colors to white');
+      resetColors(activeTasks, doneTasks);
     } else {
-      colorResetChecked.current = true; // Already reset today
+      colorResetChecked.current = true;
     }
-  }, [activeTasks, doneTasks, saveTasks]);
+  }, [activeTasks, doneTasks, resetColors]);
+
+  // Set timer to reset at midnight even if app stays open
+  useEffect(() => {
+    const scheduleNextMidnight = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0); // Next midnight
+      const msUntilMidnight = midnight.getTime() - now.getTime();
+
+      console.log(`[Color Reset] Scheduling midnight reset in ${Math.round(msUntilMidnight / 1000 / 60)} minutes`);
+
+      return setTimeout(() => {
+        console.log('[Color Reset] Midnight reached, resetting colors');
+        colorResetChecked.current = false;
+        resetColors(activeTasksRef.current, doneTasksRef.current);
+        // Schedule next midnight
+        scheduleNextMidnight();
+      }, msUntilMidnight);
+    };
+
+    const timeoutId = scheduleNextMidnight();
+    return () => clearTimeout(timeoutId);
+  }, [resetColors]);
 
   // Track when user signs in to detect future session expiration
   useEffect(() => {
