@@ -29,7 +29,7 @@ import MobileTaskCard from '@/components/MobileTaskCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CategoriesManager from '@/components/CategoriesManager';
 
-type SortField = 'priority' | 'category' | 'task';
+type SortField = 'priority' | 'category' | 'task' | 'updated_at';
 type SortDirection = 'asc' | 'desc';
 
 const defaultTasksMarkdown = `| P | Category | Subcategory | Task | Status | Color | Created | Updated |
@@ -188,6 +188,7 @@ export default function Home() {
     subcategory: 128,
     status: 128,
     task: 300,
+    updated: 90,
     actions: 100
   });
   const [isResizing, setIsResizing] = useState<string | null>(null);
@@ -878,6 +879,9 @@ export default function Home() {
             case 'task':
               comparison = a.task.localeCompare(b.task);
               break;
+            case 'updated_at':
+              comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+              break;
           }
           return sortDirection === 'asc' ? comparison : -comparison;
         });
@@ -900,6 +904,9 @@ export default function Home() {
           break;
         case 'task':
           comparison = a.task.localeCompare(b.task);
+          break;
+        case 'updated_at':
+          comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -1626,6 +1633,15 @@ export default function Home() {
                                     onMouseDown={(e) => handleResizeStart('task', e)}
                                   />
                                 </TableHead>
+                                <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.updated}px`, minWidth: `${columnWidths.updated}px` }} onClick={() => handleSort('updated_at')}>
+                                  <div className="flex items-center gap-1">
+                                    Updated {getSortIcon('updated_at')}
+                                  </div>
+                                  <div
+                                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onMouseDown={(e) => handleResizeStart('updated', e)}
+                                  />
+                                </TableHead>
                                 <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">
                                   Actions
                                   <div
@@ -1749,6 +1765,15 @@ export default function Home() {
                                     <div
                                       className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                       onMouseDown={(e) => handleResizeStart('task', e)}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="px-0.5 relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" style={{ width: `${columnWidths.updated}px`, minWidth: `${columnWidths.updated}px` }} onClick={() => handleSort('updated_at')}>
+                                    <div className="flex items-center gap-1">
+                                      Updated {getSortIcon('updated_at')}
+                                    </div>
+                                    <div
+                                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onMouseDown={(e) => handleResizeStart('updated', e)}
                                     />
                                   </TableHead>
                                   <TableHead className="px-0.5 relative group text-right" style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }} title="Actions">

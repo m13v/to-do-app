@@ -49,6 +49,7 @@ interface TaskRowProps {
     subcategory: number;
     status: number;
     task: number;
+    updated: number;
     actions: number;
   };
   isTextWrapped?: boolean;
@@ -290,6 +291,16 @@ const TaskRow: React.FC<TaskRowProps> = ({
               data-task-id={task.id}
             />
           </TableCell>
+      <TableCell className="text-xs text-muted-foreground" style={columnWidths ? { width: `${columnWidths.updated}px` } : undefined}>
+        {(() => {
+          const date = new Date(task.updated_at);
+          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+          const day = date.getDate().toString().padStart(2, '0');
+          const hours = date.getHours().toString().padStart(2, '0');
+          const mins = date.getMinutes().toString().padStart(2, '0');
+          return `${month}/${day} ${hours}:${mins}`;
+        })()}
+      </TableCell>
       <TableCell className="text-right" style={columnWidths ? { width: `${columnWidths.actions}px` } : undefined}>
         <div className="flex items-center justify-end gap-0">
               <button
