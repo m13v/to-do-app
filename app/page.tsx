@@ -827,42 +827,6 @@ export default function Home() {
     handlePriorityChange(taskId, maxPriority + 1);
   };
 
-  const handleAddTask = useCallback((afterId: string) => {
-    const newTasks = [...activeTasks];
-    const afterIndex = newTasks.findIndex(t => t.id === afterId);
-    const category = newTasks[afterIndex]?.category || 'NEW';
-    const subcategory = newTasks[afterIndex]?.subcategory || '';
-    const newPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0) + 1;
-    const now = new Date().toISOString();
-    const newTask: Task = {
-      id: `${Date.now()}-${Math.random()}`,
-      priority: newPriority,
-      category,
-      subcategory,
-      task: '',
-      status: 'to_do',
-      color: 'white',
-      created_at: now,
-      updated_at: now
-    };
-    // Insert task at position without reassigning priorities
-    const insertIndex = afterIndex + 1;
-    newTasks.splice(insertIndex, 0, newTask);
-    updateAndSaveTasks([...newTasks, ...doneTasks]);
-
-    // Track this task as being edited to defer sorting until blur
-    setEditingTaskId(newTask.id);
-    setEditingInsertIndex(insertIndex);
-
-    // Focus the new task field after render (works for both desktop and mobile)
-    setTimeout(() => {
-      const newTaskField = document.querySelector(`textarea[data-task-id="${newTask.id}"]`) as HTMLTextAreaElement;
-      if (newTaskField) {
-        newTaskField.focus();
-      }
-    }, 50); // Small delay to allow React to render the new element
-  }, [activeTasks, doneTasks, updateAndSaveTasks]);
-
   const handleDeleteTask = useCallback((id: string) => {
     const updatedActive = activeTasks.filter(t => t.id !== id);
     const updatedDone = doneTasks.filter(t => t.id !== id);
@@ -943,6 +907,43 @@ export default function Home() {
 
     return sortableTasks;
   }, [filteredActiveTasks, sortField, sortDirection, editingTaskId, editingInsertIndex]);
+
+  const handleAddTask = useCallback((afterId: string) => {
+    // Find visual position in sorted list (what user sees)
+    const visualIndex = sortedActiveTasks.findIndex(t => t.id === afterId);
+    const afterTask = sortedActiveTasks[visualIndex];
+    const category = afterTask?.category || 'NEW';
+    const subcategory = afterTask?.subcategory || '';
+    const newPriority = activeTasks.reduce((max, t) => Math.max(max, t.priority), 0) + 1;
+    const now = new Date().toISOString();
+    const newTask: Task = {
+      id: `${Date.now()}-${Math.random()}`,
+      priority: newPriority,
+      category,
+      subcategory,
+      task: '',
+      status: 'to_do',
+      color: 'white',
+      created_at: now,
+      updated_at: now
+    };
+    // Append to activeTasks (sorting handles visual order)
+    const newTasks = [...activeTasks, newTask];
+    updateAndSaveTasks([...newTasks, ...doneTasks]);
+
+    // Track this task as being edited to defer sorting until blur
+    // Use visual index + 1 so task appears after the current one in sorted view
+    setEditingTaskId(newTask.id);
+    setEditingInsertIndex(visualIndex + 1);
+
+    // Focus the new task field after render (works for both desktop and mobile)
+    setTimeout(() => {
+      const newTaskField = document.querySelector(`textarea[data-task-id="${newTask.id}"]`) as HTMLTextAreaElement;
+      if (newTaskField) {
+        newTaskField.focus();
+      }
+    }, 50); // Small delay to allow React to render the new element
+  }, [activeTasks, doneTasks, sortedActiveTasks, updateAndSaveTasks]);
 
   // Reset to page 1 when filter/search/sort changes
   useEffect(() => {
