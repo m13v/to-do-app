@@ -26,15 +26,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
-          {children}
-          <Toaster />
-          <WebviewDetector />
-        </body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        {children}
+        <Toaster />
+        <WebviewDetector />
+      </body>
+    </html>
   );
+
+  // Skip ClerkProvider during build if key is missing (static generation)
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    return content;
+  }
+
+  return <ClerkProvider>{content}</ClerkProvider>;
 }
