@@ -174,6 +174,13 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                 hasPendingChanges.current = false; // Clear after save
               }, 500);
             }}
+            onFocus={(e) => {
+              // Delay to let keyboard fully open, then scroll into view
+              const target = e.target;
+              setTimeout(() => {
+                target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              }, 300);
+            }}
             onBlur={() => {
               // Clear debounce timer and save immediately on blur
               if (taskDebounceTimer.current) {
@@ -225,6 +232,12 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                 setEditedTask(prev => ({ ...prev, priority: newVal }));
                 onPriorityChange(task.id, newVal);
               }}
+              onFocus={(e) => {
+                const target = e.target;
+                setTimeout(() => {
+                  target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }, 300);
+              }}
               className="h-5 w-6 text-xs text-center border rounded px-1"
             />
           </div>
@@ -261,6 +274,12 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                   onUpdate(task.id, 'category', newValue);
                   hasPendingChanges.current = false;
                 }, 500);
+              }}
+              onFocus={(e) => {
+                const target = e.target;
+                setTimeout(() => {
+                  target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }, 300);
               }}
               onBlur={() => {
                 if (categoryDebounceTimer.current) {
@@ -317,6 +336,12 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                       onUpdate(task.id, 'subcategory', newValue);
                       hasPendingChanges.current = false;
                     }, 500);
+                  }}
+                  onFocus={(e) => {
+                    const target = e.target;
+                    setTimeout(() => {
+                      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    }, 300);
                   }}
                   onBlur={() => {
                     if (subcategoryDebounceTimer.current) {
