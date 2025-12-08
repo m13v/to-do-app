@@ -18,6 +18,9 @@ export const viewport = {
   maximumScale: 1,
 };
 
+// Force dynamic rendering - skip static generation that fails without Clerk keys at build time
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
