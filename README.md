@@ -1,4 +1,4 @@
-# AI Task Manager
+# Task Manager
 
 A Next.js application that displays a task list from a markdown file with AI-powered editing capabilities.
 
