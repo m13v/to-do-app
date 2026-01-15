@@ -5,13 +5,7 @@ A Next.js application that displays a task list from a markdown file with AI-pow
 ## Features
 
 - **Editable Table**: Click on any cell to edit tasks or categories directly
-- **AI Assistant**: Use natural language to modify your tasks via Gemini AI
-- **Real-time Updates**: Changes are saved to the markdown file automatically
-- **Clean UI**: Hover effects show action buttons only when needed
 - **Keyboard Shortcuts**: 
-  - Press `Enter` to save edits
-  - Press `Escape` to cancel editing
-  - Press `Cmd+Enter` in the AI prompt to submit
 
 ## Setup
 
