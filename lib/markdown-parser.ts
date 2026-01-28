@@ -66,62 +66,124 @@ export function parseMarkdownTable(markdown: string): Task[] {
 
   const parsedTasks = taskLines.map((line, index) => {
     if (!line.startsWith('|')) return null;
-    const parts = line.split('|').map(p => p.trim());
-    
-    // Helper to get value from parts array by header index
-    const getValue = (index: number) => (index !== -1 && parts[index + 1] !== undefined) ? parts[index + 1] : '';
+    const rawParts = line.split('|');
 
-    // Parse priority: handle 0 explicitly since it's falsy but valid
-    const priorityValue = getValue(priorityIndex);
-    const parsedPriority = priorityValue !== '' ? parseInt(priorityValue, 10) : NaN;
+    // Smart parsing: extract known columns from start and end,
+    // treat everything in the middle as the Task content.
+    // This handles | characters inside task text.
+    // Table structure: | P | Category | Subcategory | Task | Status | Color | Created | Updated |
+    // Split result:    ['', P, Category, Subcategory, ...Task parts..., Status, Color, Created, Updated, '']
+
+    // We need at least 10 parts for a valid row (empty + 8 columns + empty)
+    if (rawParts.length < 10) {
+      // Fall back to simple parsing for short lines
+      const parts = rawParts.map(p => p.trim());
+      const getValue = (idx: number) => (idx !== -1 && parts[idx + 1] !== undefined) ? parts[idx + 1] : '';
+
+      const priorityValue = getValue(priorityIndex);
+      const parsedPriority = priorityValue !== '' ? parseInt(priorityValue, 10) : NaN;
+      const priority = !isNaN(parsedPriority) ? parsedPriority : (index + 1);
+
+      const createdValue = getValue(createdIndex);
+      let created_at = new Date().toISOString();
+      if (createdValue !== '') {
+        const parsedDate = new Date(createdValue);
+        if (!isNaN(parsedDate.getTime())) {
+          created_at = parsedDate.toISOString();
+        }
+      }
+
+      const updatedValue = getValue(updatedIndex);
+      let updated_at = created_at;
+      if (updatedValue !== '') {
+        const parsedDate = new Date(updatedValue);
+        if (!isNaN(parsedDate.getTime())) {
+          updated_at = parsedDate.toISOString();
+        }
+      }
+
+      const category = getValue(categoryIndex);
+      const taskText = getValue(taskIndex).replace(/<br\s*\/?>/gi, '\n');
+      const id = generateStableId(created_at, taskText, category);
+
+      let color: TaskColor = 'white';
+      if (colorIndex !== -1) {
+        const colorValue = getValue(colorIndex).toLowerCase() as TaskColor;
+        if (TASK_COLORS.includes(colorValue)) {
+          color = colorValue;
+        }
+      } else if (todayIndex !== -1 && getValue(todayIndex).toLowerCase() === 'yes') {
+        color = 'red';
+      }
+
+      return {
+        id,
+        priority,
+        category,
+        subcategory: getValue(subcategoryIndex),
+        task: taskText,
+        status: getValue(statusIndex),
+        color,
+        created_at,
+        updated_at,
+      };
+    }
+
+    // Smart parsing: extract from both ends
+    // Start columns (indices 1-3): P, Category, Subcategory
+    const priorityVal = rawParts[1].trim();
+    const category = rawParts[2].trim();
+    const subcategory = rawParts[3].trim();
+
+    // End columns (indices -5 to -2): Status, Color, Created, Updated
+    const statusVal = rawParts[rawParts.length - 5].trim();
+    const colorVal = rawParts[rawParts.length - 4].trim();
+    const createdVal = rawParts[rawParts.length - 3].trim();
+    const updatedVal = rawParts[rawParts.length - 2].trim();
+
+    // Task content: everything between index 4 and length-5 (exclusive), joined back with |
+    const taskParts = rawParts.slice(4, rawParts.length - 5);
+    const taskText = taskParts.join('|').trim().replace(/<br\s*\/?>/gi, '\n');
+
+    // Parse priority
+    const parsedPriority = priorityVal !== '' ? parseInt(priorityVal, 10) : NaN;
     const priority = !isNaN(parsedPriority) ? parsedPriority : (index + 1);
-    
-    // Parse created_at: use existing value if present and valid, otherwise use current time
-    const createdValue = getValue(createdIndex);
-    let created_at = new Date().toISOString(); // default to current time
-    if (createdValue !== '') {
-      const parsedDate = new Date(createdValue);
-      // Check if date is valid (not NaN)
+
+    // Parse created_at
+    let created_at = new Date().toISOString();
+    if (createdVal !== '') {
+      const parsedDate = new Date(createdVal);
       if (!isNaN(parsedDate.getTime())) {
         created_at = parsedDate.toISOString();
       }
     }
-    
-    // Parse updated_at: use existing value if present and valid, otherwise use created_at
-    const updatedValue = getValue(updatedIndex);
-    let updated_at = created_at; // default to created_at
-    if (updatedValue !== '') {
-      const parsedDate = new Date(updatedValue);
+
+    // Parse updated_at
+    let updated_at = created_at;
+    if (updatedVal !== '') {
+      const parsedDate = new Date(updatedVal);
       if (!isNaN(parsedDate.getTime())) {
         updated_at = parsedDate.toISOString();
       }
     }
-    
-    const category = getValue(categoryIndex);
-    const taskText = getValue(taskIndex).replace(/<br\s*\/?>/gi, '\n');
-    
-    // Generate stable ID based on created_at and content
-    const id = generateStableId(created_at, taskText, category);
-    
-    // Parse color: check new 'color' column first, then migrate from legacy 'today' column
+
+    // Parse color
     let color: TaskColor = 'white';
-    if (colorIndex !== -1) {
-      const colorValue = getValue(colorIndex).toLowerCase() as TaskColor;
-      if (TASK_COLORS.includes(colorValue)) {
-        color = colorValue;
-      }
-    } else if (todayIndex !== -1 && getValue(todayIndex).toLowerCase() === 'yes') {
-      // Migrate legacy 'today' tasks to red color
-      color = 'red';
+    const colorLower = colorVal.toLowerCase() as TaskColor;
+    if (TASK_COLORS.includes(colorLower)) {
+      color = colorLower;
     }
+
+    // Generate stable ID
+    const id = generateStableId(created_at, taskText, category);
 
     return {
       id,
       priority,
       category,
-      subcategory: getValue(subcategoryIndex),
+      subcategory,
       task: taskText,
-      status: getValue(statusIndex),
+      status: statusVal,
       color,
       created_at,
       updated_at,
