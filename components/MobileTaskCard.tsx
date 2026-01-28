@@ -222,7 +222,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
         
         {/* Second line: Priority, Status, Category, and Expand toggle */}
         <div className="flex items-center gap-2 text-xs mt-1">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <span className="text-muted-foreground">Priority:</span>
             <Input
               type="number"
@@ -242,7 +242,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
             />
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <span className="text-muted-foreground">Status:</span>
             <Select value={editedTask.status} onValueChange={(value) => onUpdate(task.id, 'status', value)}>
               <SelectTrigger className="h-5 text-xs w-20 border-0 p-0">
@@ -258,8 +258,8 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
             </Select>
           </div>
           
-          <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Cat:</span>
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <span className="text-muted-foreground flex-shrink-0">Cat:</span>
             <Input
               value={editedTask.category}
               onChange={(e) => {
@@ -291,11 +291,11 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = ({
                   hasPendingChanges.current = false;
                 }
               }}
-              className="h-5 text-xs w-16 border rounded px-1"
+              className="h-5 text-xs flex-1 border rounded px-1"
             />
           </div>
           
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1 flex-shrink-0">
             <button
               onClick={handleColorCycle}
               className={cn(
