@@ -270,7 +270,7 @@ export default function Home() {
     } finally {
       setSaving(false);
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, wasSignedIn]);
 
   const updateAndSaveTasks = useCallback((newTasks: Task[], shouldRecordHistory: boolean = true) => {
     if (shouldRecordHistory) {
@@ -460,7 +460,7 @@ export default function Home() {
     setHistory([loadedTasks]);
     setHistoryIndex(0);
     setLoading(false);
-  }, [isSignedIn]);
+  }, [isSignedIn, wasSignedIn]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -611,8 +611,30 @@ export default function Home() {
     }
   }, [isSignedIn, saveTasks]);
 
+  // Retry counter for automatic sync retry with backoff
+  const syncRetryCount = useRef(0);
+  const maxSyncRetries = 3;
+
   useEffect(() => {
-    if (loading || !user || syncError || authError) return;
+    if (loading || !user || authError) return;
+    // If there's a sync error, use exponential backoff for auto-retry
+    if (syncError) {
+      if (syncRetryCount.current >= maxSyncRetries) return; // Give up after max retries
+      const backoffMs = Math.min(10000 * Math.pow(2, syncRetryCount.current), 60000);
+      const retryHandler = setTimeout(async () => {
+        syncRetryCount.current += 1;
+        console.log(`[Auto Retry] Attempt ${syncRetryCount.current}/${maxSyncRetries} after ${backoffMs}ms`);
+        const success = await saveTasks(allTasks, true);
+        if (success) {
+          syncRetryCount.current = 0;
+          setSyncError(false);
+          console.log('[Auto Retry] Sync recovered');
+        }
+      }, backoffMs);
+      return () => clearTimeout(retryHandler);
+    }
+    // Normal auto-save with 10s debounce
+    syncRetryCount.current = 0;
     const handler = setTimeout(() => {
       saveTasks(allTasks);
     }, 10000);
